@@ -567,6 +567,17 @@
             }
         }
 
+        let saveProgressTimer = null;
+        function saveProgressToDB() {
+            if (!db) return;
+            clearTimeout(saveProgressTimer);
+            saveProgressTimer = setTimeout(() => {
+                try {
+                    db.transaction([STORE_NAME], "readwrite").objectStore(STORE_NAME).put({ level: currentLevel, task: currentTask }, "user_progress");
+                } catch(e) {}
+            }, 500);
+        }
+
         // 3. 双轴高精调谐引擎
         class TuningWheelEngine {
             constructor(config) {
@@ -800,6 +811,7 @@
 
         // 4. 数据调配枢纽核心
         function updateSelectedCard() {
+            if (typeof saveProgressToDB === 'function') saveProgressToDB();
             const themeTitle = document.getElementById('theme-title');
             const taskIndicator = document.getElementById('task-indicator');
             const board = document.getElementById('training-board');
@@ -1113,7 +1125,22 @@
 
             // 建立本地存储沙盒连接并回放数据
             initIndexedDB(() => {
-                loadPackFromDB();
+                if (db) {
+                    const tx = db.transaction([STORE_NAME], "readonly");
+                    const req = tx.objectStore(STORE_NAME).get("user_progress");
+                    req.onsuccess = (e) => {
+                        if (e.target.result) {
+                            currentLevel = e.target.result.level || 1;
+                            currentTask = e.target.result.task || 1;
+                            leftWheel.setValue(currentLevel);
+                            rightWheel.setValue(currentTask);
+                        }
+                        loadPackFromDB();
+                    };
+                    req.onerror = () => loadPackFromDB();
+                } else {
+                    loadPackFromDB();
+                }
             });
         };
     </script>

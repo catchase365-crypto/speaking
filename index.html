@@ -1,0 +1,1117 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>ChronosNex - 英语口语高精双轴调谐训练舱</title>
+    <style>
+        :root {
+            /* 调谐盘配色 */
+            --glass-bg: rgba(22, 27, 34, 0.6);
+            --glass-border: rgba(255, 255, 255, 0.08);
+            --left-cyan: #00f0ff;
+            --left-gold: #ffdf00;
+            --right-magenta: #00ffaa;
+            --right-violet: #bd00ff;
+            
+            /* 流光底色 */
+            --flow-cyan: #06b6d4;
+            --flow-emerald: #10b981;
+            --flow-violet: #8b5cf6;
+            --flow-magenta: #ec4899;
+            --flow-yellow: #f59e0b;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            user-select: none;
+            -webkit-user-select: none;
+        }
+
+        body {
+            color: #e6edf3;
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+            min-height: 100vh;
+            background: #0d1117;
+            overflow-x: hidden;
+            position: relative;
+            padding: 20px 10px;
+        }
+
+        /* 1. 静态流体背景 */
+        .fluid-bg {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: -1;
+            overflow: hidden;
+            background: radial-gradient(circle at 50% 50%, #161b22, #0d1117);
+        }
+
+        .circle {
+            position: absolute;
+            border-radius: 50%;
+            filter: blur(80px);
+            opacity: 0.12;
+        }
+        .c-emerald  { top: -10%; left: -10%; width: max(40vw, 40vh); height: max(40vw, 40vh); background: var(--flow-emerald); }
+        .c-violet   { top: -10%; right: -10%; width: max(45vw, 45vh); height: max(45vw, 45vh); background: var(--flow-violet); }
+        .c-seablue  { bottom: -10%; left: -10%; width: max(50vw, 50vh); height: max(50vw, 50vh); background: var(--flow-cyan); }
+        .c-magenta  { bottom: -10%; right: -10%; width: max(40vw, 40vh); height: max(40vw, 40vh); background: var(--flow-magenta); }
+        .c-yellow   { top: 40%; left: 40%; width: max(35vw, 35vh); height: max(35vw, 35vh); background: var(--flow-yellow); }
+
+        /* 2. 核心磨砂玻璃主容器 */
+        .glass-container {
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 25px;
+            background: rgba(22, 27, 34, 0.65);
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
+            border: 1px solid var(--glass-border);
+            border-radius: 24px;
+            box-shadow: 0 16px 40px rgba(0, 0, 0, 0.6);
+        }
+
+        h1 {
+            text-align: center;
+            font-size: 1.5rem;
+            margin-bottom: 20px;
+            background: linear-gradient(45deg, var(--flow-cyan), var(--flow-emerald));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            letter-spacing: 1px;
+        }
+
+        /* 3. 本地大礼包导入舱 */
+        .pack-uploader-zone {
+            margin-bottom: 25px;
+            padding: 15px;
+            background: rgba(255, 255, 255, 0.02);
+            border: 1px dashed rgba(6, 182, 212, 0.3);
+            border-radius: 14px;
+            text-align: center;
+        }
+
+        .pack-uploader-zone span {
+            font-size: 0.85rem;
+            color: #8b949e;
+            display: block;
+            margin-bottom: 10px;
+        }
+
+        /* 4. 双轴高精调谐选择器区域 */
+        .dual-wheel-row {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            gap: 25px;
+            width: 100%;
+            margin-bottom: 25px;
+        }
+
+        .wheel-card-frame {
+            position: relative;
+            flex: 1;
+            aspect-ratio: 1 / 1;
+            max-width: 155px;
+            background: var(--glass-bg);
+            border: 1px solid var(--glass-border);
+            border-radius: 28px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            box-shadow: 0 12px 32px rgba(0, 0, 0, 0.4);
+        }
+
+        .wheel-touch-zone {
+            position: relative;
+            width: 100%;
+            height: 100%;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            cursor: grab;
+            touch-action: none;
+        }
+        .wheel-touch-zone:active {
+            cursor: grabbing;
+        }
+
+        .center-needle {
+            position: absolute;
+            top: 6px;
+            width: 3px;
+            height: 12px;
+            border-radius: 1.5px;
+            z-index: 10;
+            pointer-events: none;
+        }
+        .left-frame .center-needle {
+            background: var(--left-gold);
+            box-shadow: 0 0 8px var(--left-gold);
+        }
+        .right-frame .center-needle {
+            background: var(--right-magenta);
+            box-shadow: 0 0 8px var(--right-magenta);
+        }
+
+        .wheel-svg-viewport {
+            width: 88%;
+            height: 88%;
+            overflow: visible;
+        }
+
+        .dial-text-node {
+            font-family: -apple-system, BlinkMacSystemFont, sans-serif;
+            font-weight: 800;
+            font-size: 16px;
+            fill: rgba(255, 255, 255, 0.6);
+            text-shadow: 0 0 6px rgba(0,0,0,0.8);
+            text-anchor: middle;
+            dominant-baseline: middle;
+            transition: fill 0.1s, font-size 0.1s, opacity 0.1s;
+        }
+
+        .left-frame .dial-text-node.active {
+            fill: #ffffff;
+            font-size: 20px;
+            font-weight: 900;
+            filter: drop-shadow(0 0 8px var(--left-gold));
+        }
+        .right-frame .dial-text-node.active {
+            fill: #ffffff;
+            font-size: 20px;
+            font-weight: 900;
+            filter: drop-shadow(0 0 8px var(--right-magenta));
+        }
+
+        .center-hud-readout {
+            position: absolute;
+            font-family: 'Impact', 'Arial Black', sans-serif;
+            font-size: 36px;
+            color: #ffffff;
+            pointer-events: none;
+            z-index: 2;
+            line-height: 1;
+        }
+        .left-frame .center-hud-readout { text-shadow: 0 0 12px rgba(0, 240, 255, 0.25); }
+        .right-frame .center-hud-readout { text-shadow: 0 0 12px rgba(189, 0, 255, 0.25); }
+
+        /* 5. 动态大关卡主题看板 */
+        .theme-display-panel {
+            text-align: center;
+            padding: 16px 20px;
+            background: rgba(6, 182, 212, 0.06);
+            border: 1px dashed rgba(6, 182, 212, 0.3);
+            border-radius: 14px;
+            margin-bottom: 25px;
+            backdrop-filter: blur(5px);
+        }
+        .theme-display-panel h2 {
+            font-size: 1.15rem;
+            color: #ffffff;
+            font-weight: bold;
+            line-height: 1.4;
+        }
+        .theme-display-panel .task-indicator {
+            font-size: 0.85rem;
+            color: var(--flow-emerald);
+            margin-top: 6px;
+            font-weight: 600;
+            letter-spacing: 0.5px;
+        }
+
+        /* 6. 流式发音主画板卡片 */
+        .sentence-card {
+            background: rgba(255, 255, 255, 0.02);
+            border-radius: 16px;
+            padding: 22px;
+            border: 1px solid rgba(255, 255, 255, 0.05);
+        }
+
+        .interactive-flow-zone {
+            display: flex;
+            flex-wrap: wrap;
+            align-items: flex-end; 
+            row-gap: 34px;        
+            column-gap: 6px;
+            margin-bottom: 25px;
+            padding: 10px 0;
+        }
+
+        .word-column {
+            display: inline-flex;
+            flex-direction: column;
+            align-items: center;
+            position: relative;
+        }
+
+        .pronunciation-tip {
+            font-size: 0.75rem;
+            color: var(--flow-yellow);
+            text-align: center;
+            white-space: nowrap;
+            margin-bottom: 8px;
+            background: rgba(245, 158, 11, 0.1);
+            padding: 1px 5px;
+            border-radius: 4px;
+            border: 1px solid rgba(245, 158, 11, 0.2);
+            pointer-events: none;
+        }
+
+        .word-text {
+            font-size: 1.35rem;
+            letter-spacing: 0.5px;
+            padding: 2px 6px;
+            border-radius: 4px;
+            cursor: pointer;
+            transition: all 0.2s;
+            color: #c9d1d9;
+            display: inline-flex !important;
+            flex-direction: row !important;
+            position: relative;
+        }
+
+        .word-text:hover, .word-text.active-word {
+            background: rgba(6, 182, 212, 0.2);
+            color: #fff;
+            box-shadow: 0 0 8px rgba(6, 182, 212, 0.4);
+        }
+
+        .stress { color: #ffffff; font-weight: 700; }
+        .reduction { color: #e6edf3; opacity: 0.3; font-size: 1.2rem; }
+
+        .letter-chunk { position: relative; display: inline-block; }
+
+        .letter-chunk.chunk-primary::after {
+            content: "▲";
+            position: absolute;
+            bottom: -14px;
+            left: 50%;
+            transform: translateX(-50%);
+            font-size: 0.75rem;
+            color: var(--flow-yellow);
+            text-shadow: 0 0 6px rgba(245, 158, 11, 0.6);
+            pointer-events: none;
+        }
+
+        .letter-chunk.chunk-secondary::after {
+            content: "▲";
+            position: absolute;
+            bottom: -14px;
+            left: 50%;
+            transform: translateX(-50%);
+            font-size: 0.55rem;
+            color: var(--flow-cyan);
+            opacity: 0.7;
+            pointer-events: none;
+        }
+
+        .link-next::after {
+            content: "‿";
+            position: absolute;
+            right: -6px;
+            bottom: -6px;
+            color: var(--flow-cyan);
+            font-size: 1.2rem;
+            font-weight: bold;
+            z-index: 2;
+            pointer-events: none;
+        }
+
+        .pause-container {
+            display: inline-flex;
+            align-items: center;
+            height: 100%;
+            align-self: flex-end;
+            padding-bottom: 4px;
+        }
+        .pause-short { margin: 0 5px 0 2px; color: var(--flow-violet); font-weight: bold; font-size: 1.2rem; }
+        .pause-long { margin: 0 10px 0 4px; color: var(--flow-magenta); font-weight: bold; font-size: 1.2rem; border-right: 2px dashed rgba(236, 72, 153, 0.4); padding-right: 4px; }
+
+        /* 7. 发音检视面板舱 */
+        .inspector-panel {
+            background: rgba(255, 255, 255, 0.03);
+            border: 1px dashed rgba(88, 166, 255, 0.2);
+            border-radius: 12px;
+            padding: 15px;
+            margin-bottom: 20px;
+            display: flex;
+            align-items: center;
+            gap: 20px;
+        }
+        .inspector-hidden { display: none !important; }
+        .inspector-left { flex: 1; }
+        .inspector-word { font-size: 1.25rem; font-weight: bold; color: #58a6ff; margin-bottom: 4px; }
+        .inspector-ipa { font-family: "Lucida Sans Unicode", sans-serif; font-size: 1.05rem; color: var(--flow-emerald); background: rgba(16, 185, 129, 0.1); padding: 2px 8px; border-radius: 4px; display: inline-block; margin-bottom: 8px; }
+        .inspector-desc { font-size: 0.85rem; color: #8b949e; line-height: 1.4; }
+
+        .translation-zone { font-size: 0.95rem; color: #8b949e; border-top: 1px solid rgba(255,255,255,0.05); padding-top: 15px; line-height: 1.5; }
+
+        /* 8. 发音播控台 */
+        .control-panel { display: flex; gap: 12px; margin-top: 20px; }
+        .btn { background: rgba(16, 185, 129, 0.15); border: 1px solid #10b981; color: #fff; padding: 10px 16px; border-radius: 8px; cursor: pointer; font-size: 0.9rem; transition: all 0.2s; display: flex; align-items: center; justify-content: center; gap: 6px;}
+        .btn:hover { background: #10b981; box-shadow: 0 0 12px rgba(16, 185, 129, 0.4); }
+        .btn-slow { background: rgba(139, 92, 246, 0.15); border: 1px solid #8b5cf6; }
+        .btn-slow:hover { background: #8b5cf6; box-shadow: 0 0 12px rgba(139, 92, 246, 0.4); }
+        .btn-fast { background: rgba(236, 72, 153, 0.15); border: 1px solid #ec4899; }
+        .btn-fast:hover { background: #ec4899; box-shadow: 0 0 12px rgba(236, 72, 153, 0.4); }
+
+        .nav-btn {
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid var(--glass-border);
+            color: #fff;
+            width: 44px;
+            height: 44px;
+            border-radius: 50%;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.2rem;
+            transition: all 0.2s;
+            z-index: 5;
+        }
+        .nav-btn:hover { background: rgba(255, 255, 255, 0.15); border-color: var(--flow-cyan); }
+        .nav-btn:active { transform: scale(0.9); }
+
+        .empty-notice {
+            text-align: center;
+            padding: 30px;
+            color: #8b949e;
+            background: rgba(255,255,255,0.01);
+            border-radius: 12px;
+            border: 1px solid rgba(255,255,255,0.05);
+            font-size: 0.9rem;
+        }
+
+        /* 移动端细致优化 */
+        @media (max-width: 600px) {
+            .glass-container { padding: 15px; border-radius: 16px; }
+            h1 { font-size: 1.25rem; }
+            .dual-wheel-row { gap: 15px; margin-bottom: 20px; }
+            .wheel-card-frame { max-width: 140px; border-radius: 20px; }
+            .center-hud-readout { font-size: 30px; }
+            .word-text { font-size: 1.1rem; padding: 1px 4px; }
+            .interactive-flow-zone { row-gap: 24px; column-gap: 3px; }
+            .pronunciation-tip { font-size: 0.65rem; padding: 0 4px; margin-bottom: 5px; }
+            .inspector-panel { flex-direction: column; align-items: flex-start; gap: 8px; padding: 12px; }
+            .control-panel { flex-direction: column; gap: 8px; }
+            .btn { width: 100%; padding: 12px; }
+        }
+    </style>
+</head>
+<body>
+
+    <div class="fluid-bg">
+        <div class="circle c-emerald"></div>
+        <div class="circle c-violet"></div>
+        <div class="circle c-seablue"></div>
+        <div class="circle c-magenta"></div>
+        <div class="circle c-yellow"></div>
+    </div>
+
+    <div class="glass-container">
+        
+        <div class="dual-wheel-row">
+            <button class="nav-btn" onclick="navigateCard(-1)">◁</button>
+            <div class="wheel-card-frame left-frame">
+                <div class="center-needle"></div>
+                <div class="center-hud-readout" id="leftReadout">1</div>
+                <div class="wheel-touch-zone" id="leftTouchZone">
+                    <svg class="wheel-svg-viewport" viewBox="0 0 200 200">
+                        <g id="leftTickGroup" style="transform-origin: 100px 100px; will-change: transform;"></g>
+                        <g id="leftTextGroup"></g>
+                    </svg>
+                </div>
+            </div>
+
+            <div class="wheel-card-frame right-frame">
+                <div class="center-needle"></div>
+                <div class="center-hud-readout" id="rightReadout">1</div>
+                <div class="wheel-touch-zone" id="rightTouchZone">
+                    <svg class="wheel-svg-viewport" viewBox="0 0 200 200">
+                        <g id="rightTickGroup" style="transform-origin: 100px 100px; will-change: transform;"></g>
+                        <g id="rightTextGroup"></g>
+                    </svg>
+                </div>
+            </div>
+            <button class="nav-btn" onclick="navigateCard(1)">▷</button>
+        </div>
+
+        <div class="theme-display-panel" id="themeDisplayPanel">
+            <h2 id="theme-title">未载入数据</h2>
+        </div>
+
+        <div id="training-board"></div>
+    </div>
+
+    <script>
+        // 1. 系统破冰保底演示数据
+        const defaultData = [
+            {
+                "id": 1,
+                "translation": "我们必须停止依赖直觉，而应该开始根据精准的数据指标来客观评估当前的业务进展。",
+                "words": [
+                    {"text": "We", "type": "reduction", "tip": "", "link": false, "pause": "", "ipa": "/wi/", "detail": "弱读，滑过即可。", "chunks": [{"t": "We"}]},
+                    {"text": "must", "type": "reduction", "tip": "t失爆", "link": false, "pause": "", "ipa": "/məs/", "detail": "弱读且结尾/t/完全失去爆破，只留舌位。", "chunks": [{"t": "must"}]},
+                    {"text": "stop", "type": "stress", "tip": "", "link": false, "pause": "", "ipa": "/stɑːp/", "detail": "单音节词重读，无需在特定字母下加三角。", "chunks": [{"t": "stop"}]},
+                    {"text": "relying", "type": "stress", "tip": "", "link": true, "pause": "", "ipa": "/rɪˈlaɪɪŋ/", "detail": "多音节词，重音在ly音节上。", "chunks": [{"t": "re"}, {"t": "ly", "focus": "primary"}, {"t": "ing"}]},
+                    {"text": "on", "type": "reduction", "tip": "", "link": false, "pause": "", "ipa": "/ɑːn/", "detail": "弱读，融入前面的连读中。", "chunks": [{"t": "on"}]},
+                    {"text": "intuition,", "type": "stress", "tip": "", "link": false, "pause": "short", "ipa": "/ˌɪntuˈɪʃn/", "detail": "主重音在ti音节上。", "chunks": [{"t": "intu"}, {"t": "i", "focus": "primary"}, {"t": "tion,"}]},
+                    {"text": "and", "type": "reduction", "tip": "d失爆", "link": false, "pause": "", "ipa": "/ən/", "detail": "极弱，/d/不发音。", "chunks": [{"t": "and"}]},
+                    {"text": "start", "type": "stress", "tip": "", "link": false, "pause": "", "ipa": "/stɑːrt/", "detail": "清晰重拍。", "chunks": [{"t": "start"}]},
+                    {"text": "evaluating", "type": "stress", "tip": "", "link": false, "pause": "", "ipa": "/ɪˈvæljueɪtɪŋ/", "detail": "重音在va音节。", "chunks": [{"t": "e"}, {"t": "va", "focus": "primary"}, {"t": "luating"}]},
+                    {"text": "business", "type": "stress", "tip": "", "link": false, "pause": "", "ipa": "/ˈbɪznəs/", "detail": "重音在首音节bu。", "chunks": [{"t": "bu", "focus": "primary"}, {"t": "siness"}]},
+                    {"text": "metrics", "type": "stress", "tip": "", "link": false, "pause": "short", "ipa": "/ˈmetrɪks/", "detail": "重音在met音节。", "chunks": [{"t": "met", "focus": "primary"}, {"t": "rics"}]},
+                    {"text": "based", "type": "stress", "tip": "d-o连读", "link": true, "pause": "", "ipa": "/beɪst/", "detail": "尾辅音/t/直接与后面的元音连读。", "chunks": [{"t": "based"}]},
+                    {"text": "on", "type": "reduction", "tip": "", "link": false, "pause": "", "ipa": "/ɑːn/", "detail": "弱读。", "chunks": [{"t": "on"}]},
+                    {"text": "objective", "type": "stress", "tip": "", "link": false, "pause": "", "ipa": "/əbˈdʒektɪv/", "detail": "重音在jec音节。", "chunks": [{"t": "ob"}, {"t": "jec", "focus": "primary"}, {"t": "tive"}]},
+                    {"text": "performance", "type": "stress", "tip": "", "link": false, "pause": "", "ipa": "/pərˈfɔːrməns/", "detail": "重音在for音节。", "chunks": [{"t": "per"}, {"t": "for", "focus": "primary"}, {"t": "mance"}]},
+                    {"text": "data.", "type": "stress", "tip": "", "link": false, "pause": "long", "ipa": "/ˈdeɪtə/", "detail": "完美降调落幕。", "chunks": [{"t": "da", "focus": "primary"}, {"t": "ta."}]}
+                ]
+            }
+        ];
+
+        let globalIndexData = null;
+        let currentLevel = 1;
+        let currentTask = 1;
+
+        // 触觉反馈安全封装
+        function triggerHaptic() {
+            if (window.navigator && window.navigator.vibrate) {
+                window.navigator.vibrate(12);
+            }
+        }
+
+        // 2. IndexedDB 异步管理仓
+        const DB_NAME = "ChronosNexDB";
+        const STORE_NAME = "PackStore";
+        const KEY_NAME = "oral_pack_data";
+        let db = null;
+
+        function initIndexedDB(callback) {
+            try {
+                const request = indexedDB.open(DB_NAME, 1);
+                request.onupgradeneeded = (e) => {
+                    const database = e.target.result;
+                    if (!database.objectStoreNames.contains(STORE_NAME)) {
+                        database.createObjectStore(STORE_NAME);
+                    }
+                };
+                request.onsuccess = (e) => {
+                    db = e.target.result;
+                    callback();
+                };
+                request.onerror = (e) => {
+                    console.error("IndexedDB 初始化失败，切换为纯内存运行模式", e);
+                    callback();
+                };
+            } catch (err) {
+                console.error("当前环境不支持 IndexedDB，切换为纯内存模式", err);
+                callback();
+            }
+        }
+
+        function loadPackFromDB() {
+            if (!db) {
+                fetchLocalPack();
+                return;
+            }
+            const transaction = db.transaction([STORE_NAME], "readonly");
+            const store = transaction.objectStore(STORE_NAME);
+            const request = store.get(KEY_NAME);
+            request.onsuccess = (e) => {
+                if (e.target.result) {
+                    globalIndexData = e.target.result;
+                    console.log(`⚡ 已从本地缓存潜行恢复 ${globalIndexData.length} 个核心关卡`);
+                    updateSelectedCard();
+                } else {
+                    fetchLocalPack();
+                }
+            };
+            request.onerror = () => { fetchLocalPack(); };
+        }
+
+        async function fetchLocalPack() {
+            console.log("📅 正在自动向云端拉取全量大礼包数据...");
+            try {
+                const response = await fetch('data/1.json');
+                if (!response.ok) throw new Error(`HTTP 异常! 状态码: ${response.status}`);
+                const data = await response.json();
+                if (!Array.isArray(data)) throw new Error("解包失败：根节点非合规数组结构");
+                
+                globalIndexData = data;
+                savePackToDB(data);
+                console.log(`✅ 成功自动同步并缓存全量 ${data.length} 个训练卡片`);
+                updateSelectedCard();
+            } catch (err) {
+                console.error("无感拉取 data/1.json 失败，启用保底策略:", err);
+                updateSelectedCard();
+            }
+        }
+
+        function savePackToDB(data) {
+            if (!db) return;
+            try {
+                const transaction = db.transaction([STORE_NAME], "readwrite");
+                const store = transaction.objectStore(STORE_NAME);
+                store.put(data, KEY_NAME);
+            } catch (err) {
+                console.error("写入 IndexedDB 出错", err);
+            }
+        }
+
+        // 3. 双轴高精调谐引擎
+        class TuningWheelEngine {
+            constructor(config) {
+                this.container = config.container;
+                this.tickGroup = config.tickGroup;
+                this.textGroup = config.textGroup;
+                this.readout = config.readout;
+                
+                this.isInfinite = config.isInfinite;
+                this.totalSlots = config.totalSlots;
+                this.degreesPerSlot = 360 / this.totalSlots;
+                this.minVal = config.minVal;
+                this.maxVal = config.maxVal;
+                this.baseVal = config.baseVal;
+                this.radius = 74; 
+                this.themeColor = config.themeColor;
+                this.subColor = config.subColor;
+                this.onValueChange = config.onValueChange;
+                this.updateOnDrag = config.updateOnDrag !== undefined ? config.updateOnDrag : true;
+
+                this.currentAngle = 0; 
+                this.isDragging = false;
+                this.velocity = 0;
+                this.lastAngleDeg = 0;
+                this.lastTime = 0;
+                this.friction = 0.94;
+                this.animationFrameId = null;
+                this.lastReportedValue = null;
+
+                this.initStructure();
+                this.render();
+            }
+
+            initStructure() {
+                for (let a = 0; a < 360; a += 3) {
+                    const isMajor = (a % this.degreesPerSlot === 0);
+                    if(!this.isInfinite) {
+                        const totalArc = (this.maxVal - this.minVal) * this.degreesPerSlot;
+                        if(a > totalArc && a < 360) continue;
+                    }
+                    const rStart = isMajor ? 86 : 91;
+                    const rEnd = 97;
+                    const rad = (a * Math.PI) / 180;
+                    
+                    const line = document.createElementNS("http://www.w3.org/2000/svg", "line");
+                    line.setAttribute("x1", 100 + rStart * Math.sin(rad));
+                    line.setAttribute("y1", 100 - rStart * Math.cos(rad));
+                    line.setAttribute("x2", 100 + rEnd * Math.sin(rad));
+                    line.setAttribute("y2", 100 - rEnd * Math.cos(rad));
+                    line.setAttribute("stroke", isMajor ? this.themeColor : this.subColor);
+                    line.setAttribute("stroke-width", isMajor ? "1.5" : "1");
+                    this.tickGroup.appendChild(line);
+                }
+
+                for (let i = 0; i < this.totalSlots; i++) {
+                    const textNode = document.createElementNS("http://www.w3.org/2000/svg", "text");
+                    textNode.setAttribute("class", "dial-text-node");
+                    textNode.style.cursor = "pointer";
+                    // 允许直接点击数字切换
+                    textNode.addEventListener('click', (e) => {
+                        const targetVal = parseInt(e.target.textContent);
+                        if(!isNaN(targetVal)) this.setValue(targetVal);
+                    });
+                    this.textGroup.appendChild(textNode);
+                }
+            }
+
+            getInteractionAngle(clientX, clientY) {
+                const rect = this.container.getBoundingClientRect();
+                const centerX = rect.left + rect.width / 2;
+                const centerY = rect.top + rect.height / 2;
+                return Math.atan2(clientY - centerY, clientX - centerX) * (180 / Math.PI);
+            }
+
+            render() {
+                if (!this.isInfinite) {
+                    const maxAllowedAngle = 0;
+                    const minAllowedAngle = -(this.maxVal - this.minVal) * this.degreesPerSlot;
+                    if (this.currentAngle > maxAllowedAngle) { this.currentAngle = maxAllowedAngle; this.velocity = 0; }
+                    if (this.currentAngle < minAllowedAngle) { this.currentAngle = minAllowedAngle; this.velocity = 0; }
+                }
+
+                this.tickGroup.style.transform = `rotate(${this.currentAngle}deg)`;
+
+                const continuousValue = this.baseVal - (this.currentAngle / this.degreesPerSlot);
+                const centerValueInt = Math.round(continuousValue);
+
+                const textNodes = this.textGroup.children;
+                for (let i = 0; i < this.totalSlots; i++) {
+                    const slotWorldAngle = i * this.degreesPerSlot + this.currentAngle;
+                    const rad = (slotWorldAngle * Math.PI) / 180;
+
+                    const x = 100 + this.radius * Math.sin(rad);
+                    const y = 100 - this.radius * Math.cos(rad);
+
+                    const node = textNodes[i];
+                    node.setAttribute("x", x);
+                    node.setAttribute("y", y);
+
+                    const angleDiff = ((slotWorldAngle + 180) % 360 + 360) % 360 - 180;
+                    const stepsFromTop = Math.round(angleDiff / this.degreesPerSlot);
+
+                    let slotValue = centerValueInt + stepsFromTop;
+                    slotValue = ((slotValue - this.minVal) % (this.maxVal - this.minVal + 1) + (this.maxVal - this.minVal + 1)) % (this.maxVal - this.minVal + 1) + this.minVal;
+                    
+                    if (this.isInfinite) {
+                        node.style.opacity = Math.abs(stepsFromTop) > 5 ? 0.2 : (stepsFromTop === 0 ? 1 : Math.max(0.4, 1 - Math.abs(stepsFromTop) * 0.15));
+                    } else {
+                        node.style.opacity = Math.abs(stepsFromTop) > 5 ? 0 : (stepsFromTop === 0 ? 1 : Math.max(0.12, 1 - Math.abs(stepsFromTop) * 0.18));
+                    }
+
+                    node.textContent = slotValue;
+
+                    if (stepsFromTop === 0 && node.style.opacity !== "0") {
+                        if (!node.classList.contains('active')) {
+                            node.classList.add('active');
+                            this.readout.textContent = slotValue;
+                            if (slotValue !== this.lastReportedValue) {
+                                this.lastReportedValue = slotValue;
+                                triggerHaptic();
+                                if (this.updateOnDrag || !this.isDragging) {
+                                    this.onValueChange(slotValue);
+                                }
+                            }
+                        }
+                    } else {
+                        node.classList.remove('active');
+                    }
+                }
+            }
+
+            snapToClosestTick() {
+                const targetAngle = Math.round(this.currentAngle / this.degreesPerSlot) * this.degreesPerSlot;
+                const startAn = this.currentAngle;
+                const diff = targetAngle - startAn;
+                let frame = 0;
+                const totalFrames = 14;
+
+                const springLoop = () => {
+                    frame++;
+                    const progress = frame / totalFrames;
+                    const easeOutBack = 1 - Math.pow(1 - progress, 3); 
+                    this.currentAngle = startAn + diff * easeOutBack;
+                    this.render();
+
+                    if (frame < totalFrames) {
+                        this.animationFrameId = requestAnimationFrame(springLoop);
+                    } else {
+                        this.currentAngle = targetAngle;
+                        this.render();
+                    }
+                };
+                this.animationFrameId = requestAnimationFrame(springLoop);
+            }
+
+            setValue(val) {
+                if (this.animationFrameId) cancelAnimationFrame(this.animationFrameId);
+                const targetAngle = (this.baseVal - val) * this.degreesPerSlot;
+                // 简易平滑过渡
+                const startAn = this.currentAngle;
+                let diff = targetAngle - startAn;
+                // 处理无限旋转的最短路径
+                if(this.isInfinite) {
+                   if (diff > 180) diff -= 360;
+                   if (diff < -180) diff += 360;
+                }
+                this.currentAngle = startAn + diff;
+                this.render();
+                this.onValueChange(val);
+            }
+
+            start(e) {
+                this.isDragging = true;
+                this.velocity = 0;
+                if (this.animationFrameId) cancelAnimationFrame(this.animationFrameId);
+
+                const pageX = e.touches ? e.touches[0].clientX : e.clientX;
+                const pageY = e.touches ? e.touches[0].clientY : e.clientY;
+
+                this.lastInteractionAngle = this.getInteractionAngle(pageX, pageY);
+                this.lastAngleDeg = this.currentAngle;
+                this.lastTime = Date.now();
+            }
+
+            move(e) {
+                if (!this.isDragging) return;
+
+                const pageX = e.touches ? e.touches[0].clientX : e.clientX;
+                const pageY = e.touches ? e.touches[0].clientY : e.clientY;
+
+                const currentInteractionAngle = this.getInteractionAngle(pageX, pageY);
+                let angleDelta = currentInteractionAngle - this.lastInteractionAngle;
+
+                if (angleDelta > 180) angleDelta -= 360;
+                if (angleDelta < -180) angleDelta += 360;
+
+                this.currentAngle += angleDelta;
+                this.lastInteractionAngle = currentInteractionAngle;
+
+                const now = Date.now();
+                const timeDiff = now - this.lastTime;
+                if (timeDiff > 0) {
+                    this.velocity = (this.currentAngle - this.lastAngleDeg) / timeDiff;
+                    this.lastAngleDeg = this.currentAngle;
+                    this.lastTime = now;
+                }
+                this.render();
+            }
+
+            end() {
+                if (!this.isDragging) return;
+                this.isDragging = false;
+
+                const maxVelocity = 0.5;
+                if (this.velocity > maxVelocity) this.velocity = maxVelocity;
+                if (this.velocity < -maxVelocity) this.velocity = -maxVelocity;
+
+                const runInertia = () => {
+                    if (Math.abs(this.velocity) > 0.008) {
+                        this.currentAngle += this.velocity * 16.67;
+                        this.velocity *= this.friction;
+                        this.render();
+                        this.animationFrameId = requestAnimationFrame(runInertia);
+                    } else {
+                        this.snapToClosestTick();
+                    }
+                };
+                this.animationFrameId = requestAnimationFrame(runInertia);
+            }
+        }
+
+        // 4. 数据调配枢纽核心
+        function updateSelectedCard() {
+            const themeTitle = document.getElementById('theme-title');
+            const taskIndicator = document.getElementById('task-indicator');
+            const board = document.getElementById('training-board');
+            
+            let targetCard = null;
+            let currentTopic = "系统破冰关卡";
+
+            if (globalIndexData && globalIndexData.length > 0) {
+                const matchedLevel = globalIndexData.find(l => Number(l.levelId) === currentLevel);
+                if (matchedLevel) {
+                    currentTopic = matchedLevel.topic || "口语核心进阶操练";
+                    if (matchedLevel.cards && matchedLevel.cards[currentTask - 1]) {
+                        targetCard = matchedLevel.cards[currentTask - 1];
+                    }
+                }
+            } else {
+                if (currentLevel === 1 && currentTask === 1) {
+                    targetCard = defaultData[0];
+                    currentTopic = "神经重塑核心破冰关卡";
+                }
+            }
+
+            // 更新外部文本面板
+            themeTitle.innerText = `Level ${currentLevel} 主题：${currentTopic}`;
+
+            // 动态绘制卡片内容
+            if (targetCard) {
+                renderBoard([targetCard]);
+            } else {
+                board.innerHTML = `<div class="empty-notice">⚠️ 关卡索引未命中。请点击上方按钮载入您的全量 1000 关 JSON 大礼包文件。</div>`;
+            }
+        }
+
+        // 5. 纯净流利度画板渲染引擎
+        function renderBoard(data) {
+            const board = document.getElementById('training-board');
+            board.innerHTML = '';
+
+            data.forEach((item, sentenceIdx) => {
+                const card = document.createElement('div');
+                card.className = 'sentence-card';
+                const flowZone = document.createElement('div');
+                flowZone.className = 'interactive-flow-zone';
+                let fullText = "";
+
+                item.words.forEach((w, wordIdx) => {
+                    // 1. 终极智能校验器：直接以 w.text 作为绝对正确标准，自动校验并粉碎 chunks 中的所有抽风幻觉
+                    let cleanText = w.text ? w.text.trim() : "";
+                    let groundTruth = cleanText.toLowerCase().replace(/[^a-z]/g, '');
+
+                    if (w.chunks && w.chunks.length > 0) {
+                        let chunkCombined = w.chunks.map(ck => ck.t).join('').toLowerCase().replace(/[^a-z]/g, '');
+                        // 如果发现大模型拆分音节（chunks）拼出来的词跟标准 text 对不上，说明 chunks 抽风了，直接清空它回退到安全文本渲染
+                        if (chunkCombined !== groundTruth) {
+                            w.chunks = null;
+                        }
+                    }
+                    
+                    fullText += cleanText + " ";
+                    const wordCol = document.createElement('div');
+                    wordCol.className = 'word-column';
+                    wordCol.id = `col-${sentenceIdx}-${wordIdx}`;
+
+                    // 2. 超保守学术级连读校验（只在真正“辅音结尾+元音开头”时放行）
+                    let hasLink = false;
+                    if (wordIdx < item.words.length - 1) {
+                        const nextW = item.words[wordIdx + 1];
+                        
+                        // 预先对下一个词执行相同的 chunks 抽风校验，确保对比基准绝对纯净
+                        let nextTextClean = nextW.text ? nextW.text.trim() : "";
+                        let nextGroundTruth = nextTextClean.toLowerCase().replace(/[^a-z]/g, '');
+                        if (nextW.chunks && nextW.chunks.length > 0) {
+                            let nextChunkCombined = nextW.chunks.map(ck => ck.t).join('').toLowerCase().replace(/[^a-z]/g, '');
+                            if (nextChunkCombined !== nextGroundTruth) {
+                                nextW.chunks = null;
+                            }
+                        }
+
+                        const cText = cleanText.toLowerCase().replace(/[^a-z]/g, '');
+                        const nText = nextTextClean.toLowerCase().replace(/[^a-z]/g, '');
+
+                        if (cText && nText) {
+                            // 词尾必须是真实的辅音音素结尾字母（特化加入ve和v以完美放行Level 9的love/live/give等词）
+                            const isCurrConsonant = cText.endsWith('r') || cText.endsWith('k') || cText.endsWith('m') || cText.endsWith('d') || cText.endsWith('t') || cText.endsWith('n') || cText.endsWith('s') || cText.endsWith('p') || cText.endsWith('g') || cText.endsWith('ve') || cText.endsWith('v');
+                            // 词首必须是绝对的元音字母开头
+                            const isNextVowel = nText.startsWith('a') || nText.startsWith('e') || nText.startsWith('i') || nText.startsWith('o') || nText.startsWith('u');
+
+                            // 物理条件严丝合缝，且原始数据在这一对词中确实触发了连读意图时，才允许渲染弧线
+                            if (isCurrConsonant && isNextVowel && (w.link === true || nextW.link === true)) {
+                                hasLink = true;
+                            }
+                        }
+                    }
+
+                    if (hasLink) wordCol.classList.add('link-next');
+
+                    if (w.tip && w.tip.trim() !== "") {
+                        const tipDiv = document.createElement('div');
+                        tipDiv.className = 'pronunciation-tip';
+                        tipDiv.innerText = w.tip;
+                        wordCol.appendChild(tipDiv);
+                    }
+
+                    const wordTextSpan = document.createElement('span');
+                    wordTextSpan.className = `word-text ${w.type}`;
+                    wordTextSpan.id = `word-${sentenceIdx}-${wordIdx}`;
+                    
+                    if (w.chunks && w.chunks.length > 0) {
+                        w.chunks.forEach(ck => {
+                            const chunkSpan = document.createElement('span');
+                            chunkSpan.className = 'letter-chunk';
+                            if (ck.focus === 'primary') chunkSpan.classList.add('chunk-primary');
+                            else if (ck.focus === 'secondary' || ck.focus === true) chunkSpan.classList.add('chunk-secondary');
+                            chunkSpan.innerText = ck.t;
+                            wordTextSpan.appendChild(chunkSpan);
+                        });
+                    } else {
+                        wordTextSpan.innerText = w.text;
+                    }
+
+                    wordTextSpan.onclick = (e) => {
+                        e.stopPropagation();
+                        speakText(w.text, 0.75);
+                        card.querySelectorAll('.word-text').forEach(el => el.classList.remove('active-word'));
+                        wordTextSpan.classList.add('active-word');
+                        updateInspector(sentenceIdx, w);
+                    };
+
+                    wordCol.appendChild(wordTextSpan);
+                    flowZone.appendChild(wordCol);
+
+                    if (w.pause === 'short' || w.pause === 'long') {
+                        const pauseContainer = document.createElement('div');
+                        pauseContainer.className = 'pause-container';
+                        const pSpan = document.createElement('span');
+                        pSpan.className = w.pause === 'short' ? 'pause-short' : 'pause-long';
+                        pSpan.innerText = w.pause === 'short' ? '|' : '||';
+                        pauseContainer.appendChild(pSpan);
+                        flowZone.appendChild(pauseContainer);
+                    }
+                });
+
+                const inspector = document.createElement('div');
+                inspector.className = `inspector-panel inspector-hidden`;
+                inspector.id = `inspector-${sentenceIdx}`;
+                inspector.innerHTML = `
+                    <div class="inspector-left">
+                        <div class="inspector-word" id="ins-word-${sentenceIdx}">Word</div>
+                        <div class="inspector-ipa" id="ins-ipa-${sentenceIdx}">/ipa/</div>
+                        <div class="inspector-desc" id="ins-desc-${sentenceIdx}">发音细节描述</div>
+                    </div>
+                `;
+
+                const transZone = document.createElement('div');
+                transZone.className = 'translation-zone';
+                transZone.innerText = "💡 意译参考： " + item.translation;
+
+                const ctrlPanel = document.createElement('div');
+                ctrlPanel.className = 'control-panel';
+                
+                const slowBtn = document.createElement('button');
+                slowBtn.className = 'btn btn-slow';
+                slowBtn.innerHTML = '🐢 慢速辨音示范';
+                slowBtn.onclick = () => speakText(fullText, 0.7, sentenceIdx, item.words);
+
+                const normalBtn = document.createElement('button');
+                normalBtn.className = 'btn';
+                normalBtn.innerHTML = '⚡ 常速连读跟读';
+                normalBtn.onclick = () => speakText(fullText, 0.95, sentenceIdx, item.words);
+
+                const fastBtn = document.createElement('button');
+                fastBtn.className = 'btn btn-fast';
+                fastBtn.innerHTML = '🚀 快速流利挑战';
+                fastBtn.onclick = () => speakText(fullText, 1.3, sentenceIdx, item.words);
+
+                ctrlPanel.appendChild(slowBtn);
+                ctrlPanel.appendChild(normalBtn);
+                ctrlPanel.appendChild(fastBtn);
+
+                card.appendChild(flowZone);
+                card.appendChild(inspector);
+                card.appendChild(transZone);
+                card.appendChild(ctrlPanel);
+                board.appendChild(card);
+            });
+        }
+
+        function updateInspector(sentenceIdx, wordData) { 
+            const panel = document.getElementById(`inspector-${sentenceIdx}`);
+            panel.classList.remove('inspector-hidden');
+            document.getElementById(`ins-word-${sentenceIdx}`).innerText = wordData.text.replace(/[^a-zA-Z']/g, "");
+            document.getElementById(`ins-ipa-${sentenceIdx}`).innerText = wordData.ipa || "/暂无音标/";
+            document.getElementById(`ins-desc-${sentenceIdx}`).innerText = wordData.detail || "多听标准示范，注意轻重读变化。";
+        }
+
+        function speakText(text, rate, sentenceIdx = -1, wordsArr = []) {
+            if ('speechSynthesis' in window) {
+                window.speechSynthesis.cancel();
+                const cleanText = text.replace(/[|]/g, '').trim();
+                const utterance = new SpeechSynthesisUtterance(cleanText);
+                utterance.lang = 'en-US'; 
+                utterance.rate = rate;
+
+                if (sentenceIdx !== -1 && wordsArr.length > 0) {
+                    utterance.onboundary = (event) => {
+                        if (event.name === 'word') {
+                            let charCount = 0;
+                            for (let i = 0; i < wordsArr.length; i++) {
+                                const wordStr = wordsArr[i].text;
+                                if (event.charIndex >= charCount && event.charIndex < charCount + wordStr.length + 1) {
+                                    const card = document.querySelectorAll('.sentence-card')[sentenceIdx];
+                                    if (card) {
+                                        card.querySelectorAll('.word-text').forEach(el => el.classList.remove('active-word'));
+                                        const target = document.getElementById(`word-${sentenceIdx}-${i}`);
+                                        if (target) {
+                                            target.classList.add('active-word');
+                                            updateInspector(sentenceIdx, wordsArr[i]);
+                                        }
+                                    }
+                                    break;
+                                }
+                                charCount += wordStr.length + 1;
+                            }
+                        }
+                    };
+                }
+                window.speechSynthesis.speak(utterance);
+            } else {
+                alert("当前浏览器或系统暂时无法调用语音发音引擎。");
+            }
+        }
+
+        // 6. 核心底座事件绑定
+        function bindEvents(instance, element) {
+            element.addEventListener('mousedown', (e) => instance.start(e));
+            window.addEventListener('mousemove', (e) => instance.move(e));
+            window.addEventListener('mouseup', () => instance.end());
+
+            element.addEventListener('touchstart', (e) => {
+                e.preventDefault();
+                instance.start(e);
+            }, { passive: false });
+            window.addEventListener('touchmove', (e) => {
+                if(instance.isDragging) e.preventDefault();
+                instance.move(e);
+            }, { passive: false });
+            window.addEventListener('touchend', () => instance.end());
+        }
+
+        let leftWheel, rightWheel;
+
+        function navigateCard(step) {
+            currentTask += step;
+            if (currentTask > 10) {
+                currentTask = 1;
+                currentLevel++;
+            } else if (currentTask < 1) {
+                currentTask = 10;
+                currentLevel = Math.max(1, currentLevel - 1);
+            }
+            leftWheel.setValue(currentLevel);
+            rightWheel.setValue(currentTask);
+        }
+
+        // 7. 系统初始化入口
+        window.onload = () => {
+            // 初始化高精大轮盘组
+            leftWheel = new TuningWheelEngine({
+                container: document.getElementById('leftTouchZone'),
+                tickGroup: document.getElementById('leftTickGroup'),
+                textGroup: document.getElementById('leftTextGroup'),
+                readout: document.getElementById('leftReadout'),
+                isInfinite: true,
+                totalSlots: 12,
+                minVal: 1,
+                maxVal: 100,
+                baseVal: 1,
+                themeColor: "var(--left-cyan)",
+                subColor: "rgba(0, 240, 255, 0.15)",
+                updateOnDrag: true,
+                onValueChange: (val) => {
+                    currentLevel = val;
+                    updateSelectedCard();
+                }
+            });
+
+            rightWheel = new TuningWheelEngine({
+                container: document.getElementById('rightTouchZone'),
+                tickGroup: document.getElementById('rightTickGroup'),
+                textGroup: document.getElementById('rightTextGroup'),
+                readout: document.getElementById('rightReadout'),
+                isInfinite: true,
+                totalSlots: 10,
+                minVal: 1,
+                maxVal: 10,
+                baseVal: 1,
+                themeColor: "var(--right-magenta)",
+                subColor: "rgba(0, 255, 170, 0.15)",
+                onValueChange: (val) => {
+                    currentTask = val;
+                    updateSelectedCard();
+                }
+            });
+
+            bindEvents(leftWheel, document.getElementById('leftTouchZone'));
+            bindEvents(rightWheel, document.getElementById('rightTouchZone'));
+
+            // 建立本地存储沙盒连接并回放数据
+            initIndexedDB(() => {
+                loadPackFromDB();
+            });
+        };
+    </script>
+</body>
+</html>

@@ -1616,6 +1616,8 @@
 
         function navigateCard(step) {
             triggerEyeBlink();
+            document.querySelectorAll('.wheel-card-frame').forEach(el => el.classList.add('is-active-tuning'));
+            setTimeout(() => document.querySelectorAll('.wheel-card-frame').forEach(el => el.classList.remove('is-active-tuning')), 400);
             currentTask += step;
             if (currentTask > 10) {
                 currentTask = 1;
@@ -1631,6 +1633,8 @@
         // 专供顶部按钮调用的跨大关函数（无论当前Task是多少，点击后均重置到新大关的第1卡）
         function navigateLevel(step) {
             triggerEyeBlink();
+            document.querySelectorAll('.wheel-card-frame').forEach(el => el.classList.add('is-active-tuning'));
+            setTimeout(() => document.querySelectorAll('.wheel-card-frame').forEach(el => el.classList.remove('is-active-tuning')), 400);
             let targetLevel = currentLevel + step;
             if (targetLevel > 100) targetLevel = 1;
             if (targetLevel < 1) targetLevel = 100;

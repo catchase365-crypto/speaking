@@ -890,6 +890,26 @@
         // 4. 数据调配枢纽核心
         function updateSelectedCard() {
             if (typeof saveProgressToDB === 'function') saveProgressToDB();
+            
+            // 切换卡片时，销毁现有的录音缓存与状态，防止跨卡片污染
+            if (window.audioRecorderState) {
+                if (window.audioRecorderState.timer) clearTimeout(window.audioRecorderState.timer);
+                if (window.audioRecorderState.mediaRecorder && window.audioRecorderState.mediaRecorder.state !== 'inactive') {
+                    window.audioRecorderState.mediaRecorder.stop();
+                    window.audioRecorderState.mediaRecorder.stream.getTracks().forEach(track => track.stop());
+                }
+                window.audioRecorderState.audioUrl = null;
+                window.audioRecorderState.isRecording = false;
+                window.audioRecorderState.chunks = [];
+                const recordBtn = document.getElementById('global-record-btn');
+                if (recordBtn) {
+                    recordBtn.innerHTML = '🎙️';
+                    recordBtn.style.boxShadow = 'none';
+                    let widget = document.getElementById('record-playback-widget');
+                    if (widget) widget.remove();
+                }
+            }
+
             const themeTitle = document.getElementById('theme-title');
             const taskIndicator = document.getElementById('task-indicator');
             const board = document.getElementById('training-board');
@@ -1084,6 +1104,11 @@
                     dockContainer.appendChild(fastBtn);
 
                     // 4. 注入用户指定的5个独立预留彩配方块按钮，总计8键满载程序坞排列
+                    // 全局录音状态变量保底与挂载
+                    if (!window.audioRecorderState) {
+                        window.audioRecorderState = { mediaRecorder: null, chunks: [], audioUrl: null, isRecording: false, timer: null };
+                    }
+
                     const extraButtons = [
                         { icon: '🎙️', action: 'record' },
                         { icon: '🎯', action: 'tasks' },
@@ -1097,9 +1122,98 @@
                         ebBtn.innerHTML = eb.icon;
                         if (eb.action === 'tasks') {
                             ebBtn.onclick = () => showTaskPanel();
+                        } else if (eb.action === 'record') {
+                            ebBtn.id = 'global-record-btn';
+                            ebBtn.style.position = 'relative';
+                            // 如果当前处于录音状态，恢复视觉红点
+                            if (window.audioRecorderState.isRecording) {
+                                ebBtn.innerHTML = '🟥';
+                                ebBtn.style.boxShadow = '0 0 12px #ff4d4f';
+                            }
+                            ebBtn.onclick = () => toggleAudioRecording(ebBtn);
                         }
                         dockContainer.appendChild(ebBtn);
                     });
+
+                    // 重新挂载或维持音频临时浮层位置
+                    refreshAudioPlaybackWidget();
+
+                    async function toggleAudioRecording(btn) {
+                        const state = window.audioRecorderState;
+                        if (!state.isRecording) {
+                            try {
+                                const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+                                state.chunks = [];
+                                state.mediaRecorder = new MediaRecorder(stream);
+                                state.mediaRecorder.ondataavailable = (e) => { if (e.data.size > 0) state.chunks.push(e.data); };
+                                state.mediaRecorder.onstop = () => {
+                                    const blob = new Blob(state.chunks, { type: 'audio/webm' });
+                                    state.audioUrl = URL.createObjectURL(blob);
+                                    refreshAudioPlaybackWidget();
+                                };
+                                state.mediaRecorder.start();
+                                state.isRecording = true;
+                                btn.innerHTML = '🟥';
+                                btn.style.boxShadow = '0 0 12px #ff4d4f';
+                                
+                                // 自动限时 1 分钟倒计时器
+                                state.timer = setTimeout(() => {
+                                    if (state.isRecording) toggleAudioRecording(btn);
+                                }, 60000);
+                            } catch (err) {
+                                alert('麦克风权限获取失败或当前设备不支持录音。');
+                            }
+                        } else {
+                            clearTimeout(state.timer);
+                            if (state.mediaRecorder && state.mediaRecorder.state !== 'inactive') {
+                                state.mediaRecorder.stop();
+                                state.mediaRecorder.stream.getTracks().forEach(track => track.stop());
+                            }
+                            state.isRecording = false;
+                            btn.innerHTML = '🎙️';
+                            btn.style.boxShadow = 'none';
+                        }
+                    }
+
+                    function refreshAudioPlaybackWidget() {
+                        let widget = document.getElementById('record-playback-widget');
+                        if (widget) widget.remove();
+                        
+                        const state = window.audioRecorderState;
+                        const recordBtn = document.getElementById('global-record-btn');
+                        if (state && state.audioUrl && recordBtn) {
+                            widget = document.createElement('div');
+                            widget.id = 'record-playback-widget';
+                            widget.style.cssText = 'position: absolute; bottom: calc(100% + 10px); left: 50%; transform: translateX(-50%); background: rgba(22, 27, 34, 0.95); border: 1px solid var(--flow-cyan); padding: 6px 12px; border-radius: 20px; display: flex; align-items: center; gap: 8px; box-shadow: 0 4px 15px rgba(0,0,0,0.5); z-index: 1000;';
+                            
+                            const playBtn = document.createElement('button');
+                            playBtn.innerHTML = '▶️';
+                            playBtn.style.cssText = 'background:none; border:none; cursor:pointer; font-size:1rem; color:#fff;';
+                            const audioNode = new Audio(state.audioUrl);
+                            playBtn.onclick = (e) => {
+                                e.stopPropagation(); // 阻止事件冒泡到录音按钮
+                                if (audioNode.paused) {
+                                    audioNode.play();
+                                    playBtn.innerHTML = '⏸️';
+                                } else {
+                                    audioNode.pause();
+                                    playBtn.innerHTML = '▶️';
+                                }
+                            };
+                            audioNode.onended = () => { playBtn.innerHTML = '▶️'; };
+
+                            const label = document.createElement('span');
+                            label.innerText = '我的录音';
+                            label.style.cssText = 'font-size: 0.75rem; color: #8b949e; white-space: nowrap;';
+
+                            // 整个播放浮层点击时也阻止冒泡，彻底绝缘
+                            widget.onclick = (e) => { e.stopPropagation(); };
+
+                            widget.appendChild(playBtn);
+                            widget.appendChild(label);
+                            recordBtn.appendChild(widget);
+                        }
+                    }
 
                     function showTaskPanel() {
                         let panel = document.getElementById('task-manager-panel');
@@ -1107,7 +1221,17 @@
                             panel = document.createElement('div');
                             panel.id = 'task-manager-panel';
                             panel.style.cssText = 'position:fixed; bottom:100px; left:20px; right:20px; max-width:760px; margin:0 auto; background:rgba(22,27,34,0.95); border:1px solid #30363d; border-radius:15px; padding:20px; z-index:1000; box-shadow:0 10px 30px rgba(0,0,0,0.5);';
-                            panel.innerHTML = '<h3>任务清单 <button onclick="addTask()" style="float:right; cursor:pointer">+</button></h3><ul id="task-list" style="list-style:none; margin-top:10px;"></ul>';
+                            panel.innerHTML = `
+                                <h3 style="margin-bottom:12px; display:flex; justify-content:space-between; align-items:center;">
+                                    <span style="flex:1">任务清单</span>
+                                    <button onclick="toggleTaskInput()" style="background:none; border:none; color:var(--flow-cyan); cursor:pointer; font-size:1.5rem; padding:0 10px;">+</button>
+                                </h3>
+                                <div id="task-input-container" style="display:none; gap:8px; margin-bottom:12px;">
+                                    <input type="text" id="task-inline-input" placeholder="输入新任务..." style="flex:1; background:rgba(255,255,255,0.05); border:1px solid #30363d; border-radius:6px; color:#fff; padding:6px 10px; font-size:0.9rem; outline:none;">
+                                    <button onclick="submitInlineTask()" style="background:none; border:none; cursor:pointer; font-size:1.1rem;">✈️</button>
+                                </div>
+                                <ul id="task-list" style="list-style:none; max-height:200px; overflow-y:auto;"></ul>
+                            `;
                             document.body.appendChild(panel);
                         } else {
                             panel.style.display = panel.style.display === 'none' ? 'block' : 'none';
@@ -1115,21 +1239,42 @@
                         renderTasks();
                     }
 
+                    window.toggleTaskInput = () => {
+                        const container = document.getElementById('task-input-container');
+                        if (container) {
+                            container.style.display = container.style.display === 'none' ? 'flex' : 'none';
+                            if (container.style.display === 'flex') {
+                                document.getElementById('task-inline-input').focus();
+                            }
+                        }
+                    };
+
+                    window.submitInlineTask = async () => {
+                        const input = document.getElementById('task-inline-input');
+                        if (!input) return;
+                        const text = input.value.trim();
+                        if (text) {
+                            const tasks = await getTasksFromDB();
+                            tasks.push(text);
+                            await saveTasksToDB(tasks);
+                            input.value = '';
+                            document.getElementById('task-input-container').style.display = 'none';
+                            renderTasks();
+                        }
+                    };
+
+                    // 支持回车发送任务
+                    document.addEventListener('keydown', (e) => {
+                        if (e.target && e.target.id === 'task-inline-input' && e.key === 'Enter') {
+                            submitInlineTask();
+                        }
+                    });
+
                     window.renderTasks = async () => {
                         const list = document.getElementById('task-list');
                         if (!list) return;
                         const tasks = await getTasksFromDB();
-                        list.innerHTML = tasks.map((t, i) => `<li style="margin-bottom:8px; padding:5px; border-bottom:1px solid #30363d;">${t} <button onclick="deleteTask(${i})" style="float:right; color:#f85149; border:none; background:none">删除</button></li>`).join('');
-                    };
-
-                    window.addTask = async () => {
-                        const text = prompt('请输入新任务:');
-                        if (text) {
-                            const tasks = await getTasksFromDB();
-                            tasks.push(text);
-                            saveTasksToDB(tasks);
-                            renderTasks();
-                        }
+                        list.innerHTML = tasks.map((t, i) => `<li style="margin-bottom:8px; padding:6px 4px; border-bottom:1px solid rgba(255,255,255,0.05); display:flex; justify-content:space-between; align-items:center; font-size:0.9rem;"><span>${t}</span><button onclick="deleteTask(${i})" style="color:#f85149; border:none; background:none; cursor:pointer;">删除</button></li>`).join('');
                     };
 
                     window.deleteTask = async (idx) => {
@@ -1148,8 +1293,11 @@
                     }
 
                     function saveTasksToDB(tasks) {
-                        const tx = db.transaction([STORE_NAME], 'readwrite');
-                        tx.objectStore(STORE_NAME).put(tasks, 'user_tasks');
+                        return new Promise(res => {
+                            const tx = db.transaction([STORE_NAME], 'readwrite');
+                            tx.objectStore(STORE_NAME).put(tasks, 'user_tasks');
+                            tx.oncomplete = () => res();
+                        });
                     }
                 }
 

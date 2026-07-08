@@ -76,7 +76,7 @@
             justify-content: center;
             padding: 0;
         }
-        .dock-btn:hover { transform: translateY(-4px); box-shadow: 0 6px 15px rgba(0,0,0,0.4); }
+        .dock-btn:hover { transform: translateY(0); box-shadow: 0 6px 15px rgba(0,0,0,0.4); }
         .dock-btn-slow { background: rgba(139, 92, 246, 0.15); border-color: #8b5cf6; }
         .dock-btn-slow:hover { background: #8b5cf6; box-shadow: 0 0 12px rgba(139, 92, 246, 0.5); }
         .dock-btn-normal { background: rgba(16, 185, 129, 0.15); border-color: #10b981; }
@@ -444,7 +444,7 @@
             z-index: 5;
         }
         .nav-btn:hover { background: rgba(255, 255, 255, 0.15); border-color: var(--flow-cyan); }
-        .nav-btn:active { transform: scale(0.9); }
+        .nav-btn:active { transform: scale(1.0); }
 
         .empty-notice {
             text-align: center;
@@ -1085,20 +1085,72 @@
 
                     // 4. 注入用户指定的5个独立预留彩配方块按钮，总计8键满载程序坞排列
                     const extraButtons = [
-                        { icon: '🎙️', bg: 'rgba(59, 130, 246, 0.12)', bd: 'rgba(59, 130, 246, 0.4)' },
-                        { icon: '🎯', bg: 'rgba(245, 158, 11, 0.12)', bd: 'rgba(245, 158, 11, 0.4)' },
-                        { icon: '📊', bg: 'rgba(16, 185, 129, 0.12)', bd: 'rgba(16, 185, 129, 0.4)' },
-                        { icon: '⚙️', bg: 'rgba(139, 92, 246, 0.12)', bd: 'rgba(139, 92, 246, 0.4)' },
-                        { icon: '💡', bg: 'rgba(239, 68, 68, 0.12)', bd: 'rgba(239, 68, 68, 0.4)' }
+                        { icon: '🎙️', action: 'record' },
+                        { icon: '🎯', action: 'tasks' },
+                        { icon: '📊', action: 'stats' },
+                        { icon: '⚙️', action: 'settings' },
+                        { icon: '💡', action: 'tips' }
                     ];
                     extraButtons.forEach(eb => {
                         const ebBtn = document.createElement('button');
                         ebBtn.className = 'dock-btn';
-                        ebBtn.style.background = eb.bg;
-                        ebBtn.style.borderColor = eb.bd;
                         ebBtn.innerHTML = eb.icon;
+                        if (eb.action === 'tasks') {
+                            ebBtn.onclick = () => showTaskPanel();
+                        }
                         dockContainer.appendChild(ebBtn);
                     });
+
+                    function showTaskPanel() {
+                        let panel = document.getElementById('task-manager-panel');
+                        if (!panel) {
+                            panel = document.createElement('div');
+                            panel.id = 'task-manager-panel';
+                            panel.style.cssText = 'position:fixed; bottom:100px; left:20px; right:20px; max-width:760px; margin:0 auto; background:rgba(22,27,34,0.95); border:1px solid #30363d; border-radius:15px; padding:20px; z-index:1000; box-shadow:0 10px 30px rgba(0,0,0,0.5);';
+                            panel.innerHTML = '<h3>任务清单 <button onclick="addTask()" style="float:right; cursor:pointer">+</button></h3><ul id="task-list" style="list-style:none; margin-top:10px;"></ul>';
+                            document.body.appendChild(panel);
+                        } else {
+                            panel.style.display = panel.style.display === 'none' ? 'block' : 'none';
+                        }
+                        renderTasks();
+                    }
+
+                    window.renderTasks = async () => {
+                        const list = document.getElementById('task-list');
+                        if (!list) return;
+                        const tasks = await getTasksFromDB();
+                        list.innerHTML = tasks.map((t, i) => `<li style="margin-bottom:8px; padding:5px; border-bottom:1px solid #30363d;">${t} <button onclick="deleteTask(${i})" style="float:right; color:#f85149; border:none; background:none">删除</button></li>`).join('');
+                    };
+
+                    window.addTask = async () => {
+                        const text = prompt('请输入新任务:');
+                        if (text) {
+                            const tasks = await getTasksFromDB();
+                            tasks.push(text);
+                            saveTasksToDB(tasks);
+                            renderTasks();
+                        }
+                    };
+
+                    window.deleteTask = async (idx) => {
+                        const tasks = await getTasksFromDB();
+                        tasks.splice(idx, 1);
+                        saveTasksToDB(tasks);
+                        renderTasks();
+                    };
+
+                    async function getTasksFromDB() {
+                        return new Promise(res => {
+                            const tx = db.transaction([STORE_NAME], 'readonly');
+                            const req = tx.objectStore(STORE_NAME).get('user_tasks');
+                            req.onsuccess = () => res(req.result || []);
+                        });
+                    }
+
+                    function saveTasksToDB(tasks) {
+                        const tx = db.transaction([STORE_NAME], 'readwrite');
+                        tx.objectStore(STORE_NAME).put(tasks, 'user_tasks');
+                    }
                 }
 
                 const scroller = document.createElement('div');

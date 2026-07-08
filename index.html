@@ -203,7 +203,7 @@
             position: absolute;
             top: 6px;
             width: 3px;
-            height: 12px;
+            height: 8px; /* 将高度从 12px 缩短至 8px，彻底避免它向下探出并遮挡到数字文字 */
             border-radius: 1.5px;
             z-index: 10;
             pointer-events: none;
@@ -269,8 +269,13 @@
         }
         .wheel-card-frame.is-active-tuning #leftTickGroup,
         .wheel-card-frame.is-active-tuning #rightTickGroup {
-            opacity: 0.7;
-            filter: blur(0px);
+            opacity: 1.0;
+            /* 加强版霓虹核能图层滤镜：双重多层 drop-shadow 叠加，把微小刻度逼向极其璀璨的发光极限 */
+            filter: blur(0px) drop-shadow(0 0 3px var(--left-cyan)) drop-shadow(0 0 8px var(--left-cyan));
+        }
+        .wheel-card-frame.right-frame.is-active-tuning #rightTickGroup {
+            /* 右盘精准匹配自身的荧光绿发光特效 */
+            filter: blur(0px) drop-shadow(0 0 3px var(--right-magenta)) drop-shadow(0 0 8px var(--right-magenta));
         }
         .wheel-card-frame.left-frame.is-active-tuning .dial-text-node.active {
             fill: #ffffff;
@@ -289,6 +294,7 @@
             pointer-events: none;
             z-index: 2;
             line-height: 1;
+            transform: translateY(2px); /* 顺手将中央的大数字整体微微下移 2 像素，与上方缩短后的指针拉开完美的黄金比例间距，看着更顺眼 */
         }
         .left-frame .center-hud-readout { text-shadow: 0 0 12px rgba(0, 240, 255, 0.25); }
         .right-frame .center-hud-readout { text-shadow: 0 0 12px rgba(189, 0, 255, 0.25); }

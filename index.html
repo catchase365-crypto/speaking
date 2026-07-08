@@ -664,6 +664,13 @@
             }, 500);
         }
 
+        function saveCardLearnedStatus(lvl, tsk) {
+            if (!db) return;
+            try {
+                db.transaction([STORE_NAME], "readwrite").objectStore(STORE_NAME).put(true, `learned_L${lvl}_T${tsk}`);
+            } catch(e) {}
+        }
+
         // 3. 双轴高精调谐引擎
         class TuningWheelEngine {
             constructor(config) {
@@ -1042,6 +1049,7 @@
 
                     wordTextSpan.onclick = (e) => {
                         e.stopPropagation();
+                        if (typeof saveCardLearnedStatus === 'function') saveCardLearnedStatus(currentLevel, currentTask);
                         speakText(w.text, 0.75);
                         board.querySelectorAll('.word-text').forEach(el => el.classList.remove('active-word'));
                         wordTextSpan.classList.add('active-word');
@@ -1122,6 +1130,8 @@
                         ebBtn.innerHTML = eb.icon;
                         if (eb.action === 'tasks') {
                             ebBtn.onclick = () => showTaskPanel();
+                        } else if (eb.action === 'stats') {
+                            ebBtn.onclick = () => showStatsPanel();
                         } else if (eb.action === 'record') {
                             ebBtn.id = 'global-record-btn';
                             ebBtn.style.position = 'relative';
@@ -1214,6 +1224,78 @@
                             recordBtn.appendChild(widget);
                         }
                     }
+
+
+
+                    window.getLearnedStatusMap = async () => {
+                        return new Promise(res => {
+                            if (!db) return res({});
+                            const tx = db.transaction([STORE_NAME], 'readonly');
+                            const store = tx.objectStore(STORE_NAME);
+                            const map = {};
+                            const keys = [];
+                            for (let l = 1; l <= 100; l++) {
+                                for (let t = 1; t <= 10; t++) {
+                                    keys.push(`learned_L${l}_T${t}`);
+                                }
+                            }
+                            let count = 0;
+                            keys.forEach(k => {
+                                const req = store.get(k);
+                                req.onsuccess = () => {
+                                    if (req.result) {
+                                        const parts = k.replace('learned_L', '').split('_T');
+                                        const lvl = parseInt(parts[0]);
+                                        const tsk = parseInt(parts[1]);
+                                        if (!map[lvl]) map[lvl] = {};
+                                        map[lvl][tsk] = true;
+                                    }
+                                    count++;
+                                    if (count === keys.length) res(map);
+                                };
+                                req.onerror = () => {
+                                    count++;
+                                    if (count === keys.length) res(map);
+                                };
+                            });
+                        });
+                    };
+
+                    function showStatsPanel() {
+                        let panel = document.getElementById('stats-manager-panel');
+                        if (!panel) {
+                            panel = document.createElement('div');
+                            panel.id = 'stats-manager-panel';
+                            panel.style.cssText = 'position:fixed; top:20px; left:20px; right:20px; bottom:120px; background:rgba(22,27,34,0.98); border:1px solid #30363d; border-radius:15px; padding:20px; z-index:1000; box-shadow:0 10px 30px rgba(0,0,0,0.6); display:flex; flex-direction:column;';
+                            panel.innerHTML = `\n                                <h3 style="margin-bottom:15px; display:flex; justify-content:space-between; align-items:center;">\n                                    <span>📊 全量训练进度检视 (1000 舱卡)</span>\n                                    <button onclick="document.getElementById(\'stats-manager-panel\').style.display=\'none\'" style="background:none; border:none; color:#8b949e; cursor:pointer; font-size:1.2rem;">✕</button>\n                                </h3>\n                                <div id="stats-scroll-container" style="flex:1; overflow-y:auto; padding-right:5px;"></div>\n                            `;
+                            document.body.appendChild(panel);
+                        } else {
+                            panel.style.display = panel.style.display === 'none' ? 'flex' : 'none';
+                        }
+                        if (panel.style.display !== 'none') {
+                            renderStats();
+                        }
+                    }
+
+                    window.renderStats = async () => {
+                        const container = document.getElementById('stats-scroll-container');
+                        if (!container) return;
+                        container.innerHTML = '<div style="text-align:center; padding:20px; color:#8b949e;">正在读取索引数据库进度...</div>';
+                        
+                        const learnedMap = await window.getLearnedStatusMap();
+                        let html = '';
+                        
+                        for (let l = 1; l <= 100; l++) {
+                            html += `\n                                <div style="display:flex; align-items:center; justify-content:space-between; padding:8px 10px; border-bottom:1px solid rgba(255,255,255,0.03); font-variant-numeric: tabular-nums;">\n                                    <span style="font-size:0.9rem; font-weight:bold; color:#8b949e; width:80px;">Level ${l}</span>\n                                    <div style="display:flex; gap:6px; flex:1; justify-content:flex-end;">\n                            `;
+                            for (let t = 1; t <= 10; t++) {
+                                const isLearned = learnedMap[l] && learnedMap[l][t];
+                                const bgStyle = isLearned ? 'background:var(--flow-emerald); box-shadow:0 0 6px var(--flow-emerald);' : 'background:transparent;';
+                                html += `<div onclick="leftWheel.setValue(${l}); rightWheel.setValue(${t}); document.getElementById(\'stats-manager-panel\').style.display=\'none\';" style="width:16px; height:16px; border:1.5px solid #58a6ff; border-radius:3px; cursor:pointer; ${bgStyle}" title="L${l}-T${t}"></div>`;
+                            }
+                            html += `\n                                    </div>\n                                </div>\n                            `;
+                        }
+                        container.innerHTML = html;
+                    };
 
                     function showTaskPanel() {
                         let panel = document.getElementById('task-manager-panel');
@@ -1329,6 +1411,7 @@
                 utterance.rate = rate;
 
                 if (sentenceIdx !== -1 && wordsArr.length > 0) {
+                    if (typeof saveCardLearnedStatus === 'function') saveCardLearnedStatus(currentLevel, currentTask);
                     utterance.onboundary = (event) => {
                         if (event.name === 'word') {
                             let charCount = 0;

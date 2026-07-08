@@ -930,7 +930,10 @@
                         });
                         const trailingPunct = w.text.match(/[^a-zA-Z0-9']+$/);
                         if (trailingPunct) {
-                            wordTextSpan.appendChild(document.createTextNode(trailingPunct[0]));
+                            const chunksText = w.chunks.map(ck => ck.t).join('');
+                            if (!chunksText.endsWith(trailingPunct[0])) {
+                                wordTextSpan.appendChild(document.createTextNode(trailingPunct[0]));
+                            }
                         }
                     } else {
                         wordTextSpan.innerText = w.text;

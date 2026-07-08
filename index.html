@@ -234,10 +234,10 @@
             transition: fill 0.1s, font-size 0.1s, opacity 0.1s;
         }
         
-        /* 刻度组默认调暗模糊置于底层结构 */
+        /* 刻度组默认处于低功耗待机微光状态 */
         #leftTickGroup, #rightTickGroup {
-            opacity: 0.15;
-            filter: blur(1.5px);
+            opacity: 0.25;      /* 提升一点暗光细节 */
+            filter: blur(0.5px); /* 减少静止时的模糊度，让线稿更精致 */
             transition: opacity 0.4s, filter 0.4s;
         }
 
@@ -309,10 +309,10 @@
             fill: none;
             stroke-width: 2;
             stroke-dasharray: 6 3;
-            opacity: 0.15; /* 默认大幅调暗 */
+            opacity: 0.25; /* 提升眼廓待机存在感 */
             transition: d 0.3s cubic-bezier(0.25, 0.1, 0.25, 1), opacity 0.4s, filter 0.4s;
             pointer-events: none;
-            filter: blur(2px); /* 默认静止状态加入高速模糊 */
+            filter: blur(0px); /* 移除静止模糊，保持赛博线条的锐利度 */
         }
         .left-frame .cyber-eye-outline {
             stroke: var(--left-cyan);

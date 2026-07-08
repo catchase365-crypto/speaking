@@ -40,6 +40,50 @@
             padding: 20px 10px;
         }
 
+        /* 全局程序坞容器挂载底座 */
+        .dock-global-bar {
+            position: fixed;
+            bottom: 32px;
+            left: 20px;
+            right: 20px;
+            max-width: 760px;
+            margin: 0 auto;
+            background: rgba(22, 27, 34, 0.4); /* 大幅降低不透明度，拥抱纯净穿透感 */
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+            border: 1px solid rgba(255, 255, 255, 0.05);
+            border-radius: 20px;
+            padding: 10px;
+            display: flex;
+            gap: 8px;
+            box-shadow: 0 12px 40px rgba(0, 0, 0, 0.4);
+            z-index: 999;
+            pointer-events: auto;
+        }
+
+        .dock-btn {
+            flex: 1;
+            aspect-ratio: 1 / 1;
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid var(--glass-border);
+            color: #fff;
+            border-radius: 14px;
+            cursor: pointer;
+            font-size: 1.5rem;
+            transition: all 0.2s;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 0;
+        }
+        .dock-btn:hover { transform: translateY(-4px); box-shadow: 0 6px 15px rgba(0,0,0,0.4); }
+        .dock-btn-slow { background: rgba(139, 92, 246, 0.15); border-color: #8b5cf6; }
+        .dock-btn-slow:hover { background: #8b5cf6; box-shadow: 0 0 12px rgba(139, 92, 246, 0.5); }
+        .dock-btn-normal { background: rgba(16, 185, 129, 0.15); border-color: #10b981; }
+        .dock-btn-normal:hover { background: #10b981; box-shadow: 0 0 12px rgba(16, 185, 129, 0.5); }
+        .dock-btn-fast { background: rgba(236, 72, 153, 0.15); border-color: #ec4899; }
+        .dock-btn-fast:hover { background: #ec4899; box-shadow: 0 0 12px rgba(236, 72, 153, 0.5); }
+
         /* 1. 静态流体背景 */
         .fluid-bg {
             position: fixed;
@@ -68,13 +112,17 @@
         .glass-container {
             max-width: 800px;
             margin: 0 auto;
-            padding: 25px;
+            padding: 25px 25px 0 25px;
             background: rgba(22, 27, 34, 0.65);
             backdrop-filter: blur(20px);
             -webkit-backdrop-filter: blur(20px);
             border: 1px solid var(--glass-border);
             border-radius: 24px;
             box-shadow: 0 16px 40px rgba(0, 0, 0, 0.6);
+            height: calc(100dvh - 40px);
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
         }
 
         h1 {
@@ -226,12 +274,37 @@
             letter-spacing: 0.5px;
         }
 
+        #training-board {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+        }
+
         /* 6. 流式发音主画板卡片 */
         .sentence-card {
-            background: rgba(255, 255, 255, 0.02);
-            border-radius: 16px;
-            padding: 22px;
-            border: 1px solid rgba(255, 255, 255, 0.05);
+            background: transparent;
+            border-radius: 0;
+            padding: 0;
+            border: none;
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+        }
+
+        .card-scroll-body {
+            flex: 1;
+            overflow-y: auto;
+            padding-right: 4px;
+            padding-bottom: 110px; /* 为穿透沉浸式程序坞留出空余滚动轴高度 */
+        }
+        .card-scroll-body::-webkit-scrollbar {
+            width: 4px;
+        }
+        .card-scroll-body::-webkit-scrollbar-thumb {
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 2px;
         }
 
         .interactive-flow-zone {
@@ -353,14 +426,8 @@
 
         .translation-zone { font-size: 0.95rem; color: #8b949e; border-top: 1px solid rgba(255,255,255,0.05); padding-top: 15px; line-height: 1.5; }
 
-        /* 8. 发音播控台 */
-        .control-panel { display: flex; gap: 12px; margin-top: 20px; }
-        .btn { background: rgba(16, 185, 129, 0.15); border: 1px solid #10b981; color: #fff; padding: 10px 16px; border-radius: 8px; cursor: pointer; font-size: 0.9rem; transition: all 0.2s; display: flex; align-items: center; justify-content: center; gap: 6px;}
-        .btn:hover { background: #10b981; box-shadow: 0 0 12px rgba(16, 185, 129, 0.4); }
-        .btn-slow { background: rgba(139, 92, 246, 0.15); border: 1px solid #8b5cf6; }
-        .btn-slow:hover { background: #8b5cf6; box-shadow: 0 0 12px rgba(139, 92, 246, 0.4); }
-        .btn-fast { background: rgba(236, 72, 153, 0.15); border: 1px solid #ec4899; }
-        .btn-fast:hover { background: #ec4899; box-shadow: 0 0 12px rgba(236, 72, 153, 0.4); }
+        /* 原按钮控制台弃用，移至全局程序坞 */
+        .control-panel { display: none !important; }
 
         .nav-btn {
             background: rgba(255, 255, 255, 0.05);
@@ -392,18 +459,29 @@
 
         /* 移动端细致优化 */
         @media (max-width: 600px) {
-            body { zoom: 0.9; }
-            .glass-container { padding: 15px; border-radius: 16px; }
-            h1 { font-size: 1.25rem; }
-            .dual-wheel-row { gap: 15px; margin-bottom: 20px; }
-            .wheel-card-frame { max-width: 140px; border-radius: 20px; }
-            .center-hud-readout { font-size: 30px; }
-            .word-text { font-size: 1.1rem; padding: 1px 4px; }
-            .interactive-flow-zone { row-gap: 24px; column-gap: 3px; }
-            .pronunciation-tip { font-size: 0.65rem; padding: 0 4px; margin-bottom: 5px; }
-            .inspector-panel { flex-direction: column; align-items: flex-start; gap: 8px; padding: 12px; }
-            .control-panel { flex-direction: column; gap: 8px; }
-            .btn { width: 100%; padding: 12px; }
+            body { padding: 0; background: #0d1117; }
+            .glass-container {
+                padding: 15px 15px 0 15px;
+                border-radius: 0;
+                border: none;
+                height: 100dvh;
+                background: transparent;
+                backdrop-filter: none;
+                -webkit-backdrop-filter: none;
+                box-shadow: none;
+            }
+            h1 { font-size: 1.2rem; margin-bottom: 15px; }
+            .dual-wheel-row { gap: 12px; margin-bottom: 15px; }
+            .wheel-card-frame { max-width: 125px; border-radius: 18px; }
+            .center-hud-readout { font-size: 28px; }
+            .theme-display-panel { margin-bottom: 15px; padding: 10px; }
+            .word-text { font-size: 1.15rem; padding: 1px 3px; }
+            .interactive-flow-zone { row-gap: 26px; column-gap: 4px; }
+            .pronunciation-tip { font-size: 0.65rem; }
+            .inspector-panel { flex-direction: column; align-items: flex-start; gap: 6px; padding: 10px; }
+            .dock-global-bar { bottom: 12px; left: 12px; right: 12px; padding: 8px; gap: 6px; border-radius: 16px; }
+            .dock-btn { font-size: 1.3rem; border-radius: 10px; }
+            .card-scroll-body { padding-bottom: 85px; }
         }
     </style>
 </head>
@@ -416,6 +494,9 @@
         <div class="circle c-magenta"></div>
         <div class="circle c-yellow"></div>
     </div>
+
+    
+    <div class="dock-global-bar" id="globalDockBar"></div>
 
     <div class="glass-container">
         
@@ -942,7 +1023,7 @@
                     wordTextSpan.onclick = (e) => {
                         e.stopPropagation();
                         speakText(w.text, 0.75);
-                        card.querySelectorAll('.word-text').forEach(el => el.classList.remove('active-word'));
+                        board.querySelectorAll('.word-text').forEach(el => el.classList.remove('active-word'));
                         wordTextSpan.classList.add('active-word');
                         updateInspector(sentenceIdx, w);
                     };
@@ -976,32 +1057,57 @@
                 transZone.className = 'translation-zone';
                 transZone.innerText = "💡 意译参考： " + item.translation;
 
-                const ctrlPanel = document.createElement('div');
-                ctrlPanel.className = 'control-panel';
-                
-                const slowBtn = document.createElement('button');
-                slowBtn.className = 'btn btn-slow';
-                slowBtn.innerHTML = '🐢 慢速辨音示范';
-                slowBtn.onclick = () => speakText(fullText, 0.7, sentenceIdx, item.words);
+                // 清空并重新构建屏幕最底部的独立全局程序坞
+                const dockContainer = document.getElementById('globalDockBar');
+                if (dockContainer) {
+                    dockContainer.innerHTML = '';
 
-                const normalBtn = document.createElement('button');
-                normalBtn.className = 'btn';
-                normalBtn.innerHTML = '⚡ 常速连读跟读';
-                normalBtn.onclick = () => speakText(fullText, 0.95, sentenceIdx, item.words);
+                    // 1. 🐢 慢速按钮
+                    const slowBtn = document.createElement('button');
+                    slowBtn.className = 'dock-btn dock-btn-slow';
+                    slowBtn.innerHTML = '🐢';
+                    slowBtn.onclick = () => speakText(fullText, 0.7, sentenceIdx, item.words);
+                    dockContainer.appendChild(slowBtn);
 
-                const fastBtn = document.createElement('button');
-                fastBtn.className = 'btn btn-fast';
-                fastBtn.innerHTML = '🚀 快速流利挑战';
-                fastBtn.onclick = () => speakText(fullText, 1.3, sentenceIdx, item.words);
+                    // 2. ⚡ 常速按钮
+                    const normalBtn = document.createElement('button');
+                    normalBtn.className = 'dock-btn dock-btn-normal';
+                    normalBtn.innerHTML = '⚡';
+                    normalBtn.onclick = () => speakText(fullText, 0.95, sentenceIdx, item.words);
+                    dockContainer.appendChild(normalBtn);
 
-                ctrlPanel.appendChild(slowBtn);
-                ctrlPanel.appendChild(normalBtn);
-                ctrlPanel.appendChild(fastBtn);
+                    // 3. 🚀 快速按钮
+                    const fastBtn = document.createElement('button');
+                    fastBtn.className = 'dock-btn dock-btn-fast';
+                    fastBtn.innerHTML = '🚀';
+                    fastBtn.onclick = () => speakText(fullText, 1.3, sentenceIdx, item.words);
+                    dockContainer.appendChild(fastBtn);
 
-                card.appendChild(flowZone);
-                card.appendChild(inspector);
-                card.appendChild(transZone);
-                card.appendChild(ctrlPanel);
+                    // 4. 注入用户指定的5个独立预留彩配方块按钮，总计8键满载程序坞排列
+                    const extraButtons = [
+                        { icon: '🎙️', bg: 'rgba(59, 130, 246, 0.12)', bd: 'rgba(59, 130, 246, 0.4)' },
+                        { icon: '🎯', bg: 'rgba(245, 158, 11, 0.12)', bd: 'rgba(245, 158, 11, 0.4)' },
+                        { icon: '📊', bg: 'rgba(16, 185, 129, 0.12)', bd: 'rgba(16, 185, 129, 0.4)' },
+                        { icon: '⚙️', bg: 'rgba(139, 92, 246, 0.12)', bd: 'rgba(139, 92, 246, 0.4)' },
+                        { icon: '💡', bg: 'rgba(239, 68, 68, 0.12)', bd: 'rgba(239, 68, 68, 0.4)' }
+                    ];
+                    extraButtons.forEach(eb => {
+                        const ebBtn = document.createElement('button');
+                        ebBtn.className = 'dock-btn';
+                        ebBtn.style.background = eb.bg;
+                        ebBtn.style.borderColor = eb.bd;
+                        ebBtn.innerHTML = eb.icon;
+                        dockContainer.appendChild(ebBtn);
+                    });
+                }
+
+                const scroller = document.createElement('div');
+                scroller.className = 'card-scroll-body';
+                scroller.appendChild(flowZone);
+                scroller.appendChild(inspector);
+                scroller.appendChild(transZone);
+
+                card.appendChild(scroller);
                 board.appendChild(card);
             });
         }

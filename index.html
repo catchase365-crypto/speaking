@@ -328,14 +328,39 @@
         .right-frame .cyber-eye-outline {
             stroke: var(--right-magenta);
         }
-        /* 柔和媚眼闭合动画关键帧 */
+        /* ================= 赛博视网膜柔和闭合与视差遮盖引擎 ================= */
+        #leftTickGroup, #rightTickGroup, #leftTextGroup, #rightTextGroup {
+            transform-origin: 100px 100px;
+            transition: transform 0.3s cubic-bezier(0.25, 1, 0.5, 1), opacity 0.3s;
+        }
+
+        .center-hud-readout {
+            position: absolute;
+            font-family: 'Impact', 'Arial Black', sans-serif;
+            font-size: 36px;
+            color: #ffffff;
+            pointer-events: none;
+            z-index: 2;
+            line-height: 1;
+            transform: translateY(-2px);
+            transition: transform 0.25s cubic-bezier(0.25, 1, 0.5, 1), opacity 0.25s;
+        }
+
         .is-blinking .cyber-eye-mesh,
         .is-blinking .cyber-eye-shadow,
         .is-blinking .cyber-eye-outline {
-            d: path("M 12,100 Q 100,98 188,100 Q 100,102 12,100 Z") !important;
+            d: path("M 12,100 Q 100,99 188,100 Q 100,101 12,100 Z") !important;
         }
+
+        /* 仅对中心瞳孔与最核心的中央挂载 HTML 大数字实施垂直压扁与光影吞噬 */
         .is-blinking .cyber-eye-pupil {
-            transform: scaleY(0);
+            transform: scaleY(0) !important;
+        }
+
+        .is-blinking .center-hud-readout {
+            transform: translateY(-2px) scaleY(0) !important;
+            opacity: 0 !important;
+            filter: blur(2px);
         }
 
         /* 5. 动态大关卡主题看板 */
@@ -1077,8 +1102,20 @@ window.addEventListener("click", function(){ var d=document.documentElement; (d.
             setValue(val) {
                 if (this.animationFrameId) cancelAnimationFrame(this.animationFrameId);
                 const targetAngle = (this.baseVal - val) * this.degreesPerSlot;
+                
+                // 强行关闭可能存在的 CSS 过渡污染，确保按按钮重置时绝对无延迟静态死顿、瞬间到位
+                const originalTransition = this.tickGroup.style.transition;
+                this.tickGroup.style.transition = 'none';
+                
                 this.currentAngle = targetAngle;
                 this.render();
+                
+                // 渲染完成后，恢复正常的拖拽物理过渡环境
+                if (originalTransition) {
+                    requestAnimationFrame(() => {
+                        this.tickGroup.style.transition = originalTransition;
+                    });
+                }
                 this.onValueChange(val);
             }
 
@@ -1805,9 +1842,9 @@ window.addEventListener("click", function(){ var d=document.documentElement; (d.
         let leftWheel, rightWheel;
 
         function triggerEyeBlink() {
-            document.querySelectorAll('.wheel-svg-viewport').forEach(svg => {
-                svg.classList.add('is-blinking');
-                setTimeout(() => svg.classList.remove('is-blinking'), 300);
+            document.querySelectorAll('.wheel-card-frame').forEach(frame => {
+                frame.classList.add('is-blinking');
+                setTimeout(() => frame.classList.remove('is-blinking'), 280);
             });
         }
 

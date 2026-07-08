@@ -200,8 +200,8 @@
             pointer-events: none;
         }
         .left-frame .center-needle {
-            background: var(--left-gold);
-            box-shadow: 0 0 8px var(--left-gold);
+            background: var(--left-cyan);
+            box-shadow: 0 0 8px var(--left-cyan);
         }
         .right-frame .center-needle {
             background: var(--right-magenta);
@@ -224,6 +224,13 @@
             dominant-baseline: middle;
             transition: fill 0.1s, font-size 0.1s, opacity 0.1s;
         }
+        
+        /* 刻度组默认调暗模糊置于底层结构 */
+        #leftTickGroup, #rightTickGroup {
+            opacity: 0.15;
+            filter: blur(1.5px);
+            transition: opacity 0.4s, filter 0.4s;
+        }
 
         .center-hud-mesh-bg {
             fill: url(#fishnetPattern);
@@ -231,15 +238,40 @@
         }
 
         .left-frame .dial-text-node.active {
-            fill: #ffffff;
+            fill: rgba(255, 255, 255, 0.3);
             font-size: 24px;
             font-weight: 900;
-            filter: drop-shadow(0 0 12px var(--left-gold));
+            transition: fill 0.4s, filter 0.4s;
         }
         .right-frame .dial-text-node.active {
-            fill: #ffffff;
+            fill: rgba(255, 255, 255, 0.3);
             font-size: 24px;
             font-weight: 900;
+            transition: fill 0.4s, filter 0.4s;
+        }
+
+        /* 触摸激活态：解除模糊、注入能量强光、网格复苏 */
+        .wheel-card-frame.is-active-tuning .cyber-eye-mesh {
+            opacity: 0.7;
+        }
+        .wheel-card-frame.is-active-tuning .cyber-eye-outline {
+            opacity: 0.9;
+            filter: drop-shadow(0 0 10px var(--left-cyan));
+        }
+        .wheel-card-frame.right-frame.is-active-tuning .cyber-eye-outline {
+            filter: drop-shadow(0 0 10px var(--right-magenta));
+        }
+        .wheel-card-frame.is-active-tuning #leftTickGroup,
+        .wheel-card-frame.is-active-tuning #rightTickGroup {
+            opacity: 0.7;
+            filter: blur(0px);
+        }
+        .wheel-card-frame.left-frame.is-active-tuning .dial-text-node.active {
+            fill: #ffffff;
+            filter: drop-shadow(0 0 12px var(--left-cyan));
+        }
+        .wheel-card-frame.right-frame.is-active-tuning .dial-text-node.active {
+            fill: #ffffff;
             filter: drop-shadow(0 0 12px var(--right-magenta));
         }
 
@@ -258,8 +290,9 @@
         /* 赛博视网膜与性感丝袜眼廓 */
         .cyber-eye-mesh {
             fill: url(#fishnetPattern);
-            transition: d 0.3s cubic-bezier(0.25, 0.1, 0.25, 1);
+            transition: d 0.3s cubic-bezier(0.25, 0.1, 0.25, 1), opacity 0.4s;
             pointer-events: none;
+            opacity: 0.12; /* 默认大幅调暗 */
         }
         .cyber-eye-shadow {
             fill: url(#sphereGrad);
@@ -270,17 +303,16 @@
             fill: none;
             stroke-width: 2;
             stroke-dasharray: 6 3;
-            opacity: 0.7;
-            transition: d 0.3s cubic-bezier(0.25, 0.1, 0.25, 1);
+            opacity: 0.15; /* 默认大幅调暗 */
+            transition: d 0.3s cubic-bezier(0.25, 0.1, 0.25, 1), opacity 0.4s, filter 0.4s;
             pointer-events: none;
+            filter: blur(2px); /* 默认静止状态加入高速模糊 */
         }
         .left-frame .cyber-eye-outline {
             stroke: var(--left-cyan);
-            filter: drop-shadow(0 0 8px var(--left-cyan));
         }
         .right-frame .cyber-eye-outline {
             stroke: var(--right-magenta);
-            filter: drop-shadow(0 0 8px var(--right-magenta));
         }
         /* 柔和媚眼闭合动画关键帧 */
         .is-blinking .cyber-eye-mesh,
@@ -1548,19 +1580,30 @@
 
         // 6. 核心底座事件绑定
         function bindEvents(instance, element) {
-            element.addEventListener('mousedown', (e) => instance.start(e));
+            const cardFrame = element.closest('.wheel-card-frame');
+            element.addEventListener('mousedown', (e) => {
+                if(cardFrame) cardFrame.classList.add('is-active-tuning');
+                instance.start(e);
+            });
             window.addEventListener('mousemove', (e) => instance.move(e));
-            window.addEventListener('mouseup', () => instance.end());
+            window.addEventListener('mouseup', () => {
+                if(cardFrame) cardFrame.classList.remove('is-active-tuning');
+                instance.end();
+            });
 
             element.addEventListener('touchstart', (e) => {
                 e.preventDefault();
+                if(cardFrame) cardFrame.classList.add('is-active-tuning');
                 instance.start(e);
             }, { passive: false });
             window.addEventListener('touchmove', (e) => {
                 if(instance.isDragging) e.preventDefault();
                 instance.move(e);
             }, { passive: false });
-            window.addEventListener('touchend', () => instance.end());
+            window.addEventListener('touchend', () => {
+                if(cardFrame) cardFrame.classList.remove('is-active-tuning');
+                instance.end();
+            });
         }
 
         let leftWheel, rightWheel;

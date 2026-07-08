@@ -1121,8 +1121,8 @@
                         { icon: '🎙️', action: 'record' },
                         { icon: '🎯', action: 'tasks' },
                         { icon: '📊', action: 'stats' },
-                        { icon: '⚙️', action: 'settings' },
-                        { icon: '💡', action: 'tips' }
+                        { icon: '◁', action: 'prev' },
+                        { icon: '▷', action: 'next' }
                     ];
                     extraButtons.forEach(eb => {
                         const ebBtn = document.createElement('button');
@@ -1132,6 +1132,10 @@
                             ebBtn.onclick = () => showTaskPanel();
                         } else if (eb.action === 'stats') {
                             ebBtn.onclick = () => showStatsPanel();
+                        } else if (eb.action === 'prev') {
+                            ebBtn.onclick = () => navigateCard(-1);
+                        } else if (eb.action === 'next') {
+                            ebBtn.onclick = () => navigateCard(1);
                         } else if (eb.action === 'record') {
                             ebBtn.id = 'global-record-btn';
                             ebBtn.style.position = 'relative';

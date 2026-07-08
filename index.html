@@ -339,7 +339,67 @@
         }
 
         /* 5. 动态大关卡主题看板 */
+        /* 精准悬浮赛博微型鼻梁：卡在双眼正中下方，绝不挤压整体布局 */
+        .cyber-nose-zone {
+            position: absolute;
+            left: 50%;
+            top: 140px; /* 适当下移至双眼底盘下方，但保持在锯齿看板上方 */
+            transform: translateX(-50%);
+            width: 0;
+            height: 0;
+            border-left: 5px solid transparent;
+            border-right: 5px solid transparent;
+            border-top: 6px solid rgba(0, 240, 255, 0.5);
+            filter: drop-shadow(0 0 5px var(--left-cyan));
+            z-index: 10;
+            pointer-events: none;
+        }
+        .cyber-nose-zone::after {
+            content: '';
+            position: absolute;
+            top: -8px;
+            left: -1px;
+            width: 2px;
+            height: 4px;
+            background: linear-gradient(to bottom, var(--left-cyan), var(--right-magenta));
+            opacity: 0.6;
+        }
+        /* 解决手机端不支持对clip-path元素直接加drop-shadow的硬核修正：使用混合模式与伪元素描边去闪技术 */
+        @keyframes jawStrokeGlow {
+            0%, 100% {
+                background: linear-gradient(90deg, var(--left-cyan), var(--flow-emerald));
+                opacity: 0.2;
+                transform: scaleX(1) translateY(0);
+            }
+            50% {
+                background: linear-gradient(90deg, var(--right-magenta), #ff007f);
+                opacity: 0.95;
+                transform: scaleX(1.03) translateY(1px);
+            }
+        }
+        @keyframes jawBaseVibrate {
+            0%, 100% { transform: translate(0, 0) scale(1); }
+            20% { transform: translate(-1px, 1px) scale(1.01); filter: brightness(1.2); }
+            40% { transform: translate(1px, -1px) scale(0.99); }
+            60% { transform: translate(-1px, -1px) scale(1.01); }
+            80% { transform: translate(1px, 1px) scale(1); }
+        }
+        .theme-display-panel::before {
+            content: '';
+            position: absolute;
+            top: 0; left: 0; right: 0; bottom: 0;
+            z-index: -1;
+            background: transparent;
+            clip-path: polygon(0% 0%, 4% 6px, 8% 0%, 12% 6px, 16% 0%, 20% 6px, 24% 0%, 28% 6px, 32% 0%, 36% 6px, 40% 0%, 44% 6px, 48% 0%, 52% 6px, 56% 0%, 60% 6px, 64% 0%, 68% 6px, 72% 0%, 76% 6px, 80% 0%, 84% 6px, 88% 0%, 92% 6px, 96% 0%, 100% 0%, 100% 100%, 0% 100%);
+            padding: 1.5px; /* 用padding配合content-box撑出纯CSS的高精边缘亮色线条 */
+            -webkit-mask: linear-gradient(#fff 0 0) content-box exclude, linear-gradient(#fff 0 0);
+            mask: linear-gradient(#fff 0 0) content-box exclude, linear-gradient(#fff 0 0);
+            opacity: 0;
+            transition: opacity 0.2s;
+        }
         .theme-display-panel {
+            transition: transform 0.1s ease, background 0.2s;
+            will-change: transform, background;
             text-align: center;
             padding: 10px 14px;
             background: rgba(22, 27, 34, 0.5);
@@ -607,7 +667,7 @@
             .wheel-card-frame { max-width: 125px; border-radius: 18px; }
             .center-hud-readout { font-size: 28px; }
             .theme-display-panel {
-                margin-bottom: 12px;
+                margin: -6px auto 12px auto; /* 移动端同步上移，粉碎箭头的多余间距 */
                 padding: 6px 8px;
                 width: 100%;
                 /* 移动端下，上方正方形最大宽度是 125px * 2，加上 12px 间距 */

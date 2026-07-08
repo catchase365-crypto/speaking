@@ -122,12 +122,12 @@
             max-width: 800px;
             margin: 0 auto;
             padding: 25px 25px 0 25px;
-            background: rgba(22, 27, 34, 0.65);
-            backdrop-filter: blur(20px);
-            -webkit-backdrop-filter: blur(20px);
-            border: 1px solid var(--glass-border);
+            background: rgba(22, 27, 34, 0.4);
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+            border: 1px solid rgba(255, 255, 255, 0.05);
             border-radius: 24px;
-            box-shadow: 0 16px 40px rgba(0, 0, 0, 0.6);
+            box-shadow: 0 16px 40px rgba(0, 0, 0, 0.4);
             height: calc(100dvh - 40px);
             display: flex;
             flex-direction: column;
@@ -176,13 +176,15 @@
             flex: 1;
             aspect-ratio: 1 / 1;
             max-width: 155px;
-            background: var(--glass-bg);
-            border: 1px solid var(--glass-border);
+            background: rgba(22, 27, 34, 0.4);
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+            border: 1px solid rgba(255, 255, 255, 0.05);
             border-radius: 28px;
             display: flex;
             justify-content: center;
             align-items: center;
-            box-shadow: 0 12px 32px rgba(0, 0, 0, 0.4);
+            box-shadow: 0 12px 32px rgba(0, 0, 0, 0.3);
         }
 
         .wheel-touch-zone {
@@ -340,11 +342,12 @@
         .theme-display-panel {
             text-align: center;
             padding: 8px 12px;
-            background: rgba(6, 182, 212, 0.06);
-            border: 1px dashed rgba(6, 182, 212, 0.3);
+            background: rgba(22, 27, 34, 0.4);
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+            border: 1px solid rgba(255, 255, 255, 0.05);
             border-radius: 14px;
             margin-bottom: 12px;
-            backdrop-filter: blur(5px);
             /* 既然上方正方形最大宽度是 155px * 2，加上 25px 的间距，那么主题条也锁死这个最大宽度，实现绝对垂直对齐 */
             width: 100%;
             max-width: calc(155px * 2 + 25px);
@@ -570,6 +573,10 @@
                 width: 100%;
                 /* 移动端下，上方正方形最大宽度是 125px * 2，加上 12px 间距 */
                 max-width: calc(125px * 2 + 12px);
+                background: rgba(22, 27, 34, 0.4);
+                backdrop-filter: blur(12px);
+                -webkit-backdrop-filter: blur(12px);
+                border: 1px solid rgba(255, 255, 255, 0.05);
             }
             .theme-display-panel h2 { font-size: 0.85rem; line-height: 1.2; }
             .word-text { font-size: 1.15rem; padding: 1px 3px; }
@@ -658,7 +665,7 @@ window.addEventListener("click", function(){ var d=document.documentElement; (d.
             <button class="nav-btn" onclick="navigateLevel(1)">▷</button>
         </div>
 
-        <div class="theme-display-panel" id="themeDisplayPanel" style="position: relative; overflow: hidden;">
+        <div class="theme-display-panel" id="themeDisplayPanel" style="position: relative; overflow: hidden; cursor: pointer;" onclick="toggleThemePanel()">
             <div style="position: absolute; top: 0; left: 0; width: 100%; height: 100%; z-index: 0; background: linear-gradient(90deg, rgba(255, 255, 255, 0.03), rgba(255, 255, 255, 0.01));"></div>
             <h2 id="theme-title" style="position: relative; z-index: 1; color: rgba(255, 255, 255, 0.7);">未载入数据</h2>
         </div>
@@ -1268,6 +1275,47 @@ window.addEventListener("click", function(){ var d=document.documentElement; (d.
                         { icon: '◁', action: 'prev' },
                         { icon: '▷', action: 'next' }
                     ];
+                    // 挂载全局切换主题面板函数
+                    window.toggleThemePanel = () => {
+                        let panel = document.getElementById('theme-picker-panel');
+                        if (!panel) {
+                            panel = document.createElement('div');
+                            panel.id = 'theme-picker-panel';
+                            panel.style.cssText = 'position:fixed; top:15px; left:15px; right:15px; bottom:110px; background:rgba(13,17,23,0.96); backdrop-filter:blur(25px); -webkit-backdrop-filter:blur(25px); border:1px solid rgba(255,255,255,0.08); border-radius:24px; padding:20px; z-index:1001; box-shadow:0 24px 60px rgba(0,0,0,0.8); display:flex; flex-direction:column; overflow:hidden;';
+                            panel.innerHTML = `
+                                <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:15px;">
+                                    <h3 style="font-size:1.1rem; font-weight:800; background:linear-gradient(45deg, #00f0ff, #00ffaa); -webkit-background-clip:text; -webkit-text-fill-color:transparent;">CHRONOS THEME MATRIX</h3>
+                                    <button onclick="document.getElementById('theme-picker-panel').style.display='none'" style="background:rgba(255,255,255,0.05); border:1px solid rgba(255,255,255,0.1); color:#fff; border-radius:50%; width:32px; height:32px; display:flex; align-items:center; justify-content:center; cursor:pointer;">✕</button>
+                                </div>
+                                <div id="theme-picker-list" style="flex:1; overflow-y:auto; scrollbar-width:none;"></div>
+                            `;
+                            document.body.appendChild(panel);
+                            panel.addEventListener('touchstart', (e) => e.stopPropagation(), {passive:true});
+                            panel.addEventListener('touchmove', (e) => e.stopPropagation(), {passive:true});
+                        } else {
+                            panel.style.display = panel.style.display === 'none' ? 'flex' : 'none';
+                        }
+                        if (panel.style.display !== 'none') {
+                            const listCont = document.getElementById('theme-picker-list');
+                            let listHtml = '';
+                            for (let l = 1; l <= 100; l++) {
+                                let tTopic = "口语核心进阶操练";
+                                if (globalIndexData) {
+                                    const matched = globalIndexData.find(item => Number(item.levelId) === l);
+                                    if (matched && matched.topic) tTopic = matched.topic;
+                                }
+                                const isCurr = (l === currentLevel);
+                                listHtml += `
+                                    <div onclick="leftWheel.setValue(${l}); rightWheel.setValue(1); document.getElementById('theme-picker-panel').style.display='none';" style="padding:12px; margin-bottom:6px; background:${isCurr ? 'rgba(6,182,212,0.15)' : 'rgba(255,255,255,0.02)'}; border:1px solid ${isCurr ? 'var(--left-cyan)' : 'rgba(255,255,255,0.05)'}; border-radius:10px; cursor:pointer; display:flex; gap:10px; align-items:center;">
+                                        <span style="font-family:'Impact', sans-serif; color:${isCurr ? 'var(--left-cyan)' : 'rgba(255,255,255,0.3)'}; font-size:0.9rem; width:45px;">LV.${String(l).padStart(3, '0')}</span>
+                                        <span style="font-size:0.85rem; color:${isCurr ? '#fff' : '#c9d1d9'}; font-weight:${isCurr ? '700' : 'normal'}; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">${tTopic}</span>
+                                    </div>
+                                `;
+                            }
+                            listCont.innerHTML = listHtml;
+                        }
+                    };
+
                     extraButtons.forEach(eb => {
                         const ebBtn = document.createElement('button');
                         ebBtn.className = 'dock-btn';

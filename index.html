@@ -501,7 +501,7 @@
     <div class="glass-container">
         
         <div class="dual-wheel-row">
-            <button class="nav-btn" onclick="navigateCard(-1)">◁</button>
+            <button class="nav-btn" onclick="navigateLevel(-1)">◁</button>
             <div class="wheel-card-frame left-frame">
                 <div class="center-needle"></div>
                 <div class="center-hud-readout" id="leftReadout">1</div>
@@ -523,7 +523,7 @@
                     </svg>
                 </div>
             </div>
-            <button class="nav-btn" onclick="navigateCard(1)">▷</button>
+            <button class="nav-btn" onclick="navigateLevel(1)">▷</button>
         </div>
 
         <div class="theme-display-panel" id="themeDisplayPanel">
@@ -1270,9 +1270,23 @@
                         if (!panel) {
                             panel = document.createElement('div');
                             panel.id = 'stats-manager-panel';
-                            panel.style.cssText = 'position:fixed; top:20px; left:20px; right:20px; bottom:120px; background:rgba(22,27,34,0.98); border:1px solid #30363d; border-radius:15px; padding:20px; z-index:1000; box-shadow:0 10px 30px rgba(0,0,0,0.6); display:flex; flex-direction:column;';
-                            panel.innerHTML = `\n                                <h3 style="margin-bottom:15px; display:flex; justify-content:space-between; align-items:center;">\n                                    <span>📊 全量训练进度检视 (1000 舱卡)</span>\n                                    <button onclick="document.getElementById(\'stats-manager-panel\').style.display=\'none\'" style="background:none; border:none; color:#8b949e; cursor:pointer; font-size:1.2rem;">✕</button>\n                                </h3>\n                                <div id="stats-scroll-container" style="flex:1; overflow-y:auto; padding-right:5px;"></div>\n                            `;
+                            panel.style.cssText = 'position:fixed; top:15px; left:15px; right:15px; bottom:110px; background:rgba(13,17,23,0.95); backdrop-filter:blur(25px); -webkit-backdrop-filter:blur(25px); border:1px solid rgba(255,255,255,0.08); border-radius:24px; padding:24px; z-index:1000; box-shadow:0 24px 60px rgba(0,0,0,0.8); display:flex; flex-direction:column; overflow:hidden;';
+                            panel.innerHTML = `
+                                <div style="display:flex; justify-content:space-between; align-items:flex-start; margin-bottom:20px;">
+                                    <div>
+                                        <h3 style="font-size:1.1rem; font-weight:800; letter-spacing:1px; background:linear-gradient(45deg, #00f0ff, #00ffaa); -webkit-background-clip:text; -webkit-text-fill-color:transparent;">CHRONOS MATRIX PROGRESS</h3>
+                                        <div id="stats-hud-counter" style="font-family:'Impact', 'Arial Black', sans-serif; font-size:1.6rem; color:#ffffff; margin-top:6px; letter-spacing:1px; text-shadow:0 0 10px rgba(0,255,170,0.3); font-variant-numeric:tabular-nums;">0 / 1000 <span style="color:#00ffaa; font-size:1.1rem; font-weight:normal; margin-left:6px;">0.00%</span></div>
+                                    </div>
+                                    <button onclick="document.getElementById('stats-manager-panel').style.display='none'" style="background:rgba(255,255,255,0.05); border:1px solid rgba(255,255,255,0.1); color:#fff; border-radius:50%; width:36px; height:36px; display:flex; align-items:center; justify-content:center; cursor:pointer; font-size:1rem;">✕</button>
+                                </div>
+                                <div style="width:100%; height:4px; background:rgba(255,255,255,0.03); border-radius:2px; margin-bottom:20px; overflow:hidden;">
+                                    <div id="stats-hud-progressbar" style="width:0%; height:100%; background:linear-gradient(90deg, #00f0ff, #00ffaa); transition:width 0.6s cubic-bezier(0.1, 0.8, 0.2, 1); box-shadow:0 0 8px #00ffaa;"></div>
+                                </div>
+                                <div id="stats-scroll-container" style="flex:1; overflow-y:auto; padding-right:4px; scrollbar-width:none;"></div>
+                            `;
                             document.body.appendChild(panel);
+                            panel.addEventListener('touchstart', (e) => e.stopPropagation(), {passive:true});
+                            panel.addEventListener('touchmove', (e) => e.stopPropagation(), {passive:true});
                         } else {
                             panel.style.display = panel.style.display === 'none' ? 'flex' : 'none';
                         }
@@ -1283,20 +1297,43 @@
 
                     window.renderStats = async () => {
                         const container = document.getElementById('stats-scroll-container');
+                        const hudCounter = document.getElementById('stats-hud-counter');
+                        const hudBar = document.getElementById('stats-hud-progressbar');
                         if (!container) return;
-                        container.innerHTML = '<div style="text-align:center; padding:20px; color:#8b949e;">正在读取索引数据库进度...</div>';
+                        
+                        container.innerHTML = '<div style="text-align:center; padding:40px; color:#8b949e; font-size:0.9rem;">GETTING ARCHIVE DATA...</div>';
                         
                         const learnedMap = await window.getLearnedStatusMap();
+                        let totalLearned = 0;
                         let html = '';
                         
                         for (let l = 1; l <= 100; l++) {
-                            html += `\n                                <div style="display:flex; align-items:center; justify-content:space-between; padding:8px 10px; border-bottom:1px solid rgba(255,255,255,0.03); font-variant-numeric: tabular-nums;">\n                                    <span style="font-size:0.9rem; font-weight:bold; color:#8b949e; width:80px;">Level ${l}</span>\n                                    <div style="display:flex; gap:6px; flex:1; justify-content:flex-end;">\n                            `;
+                            for (let t = 1; t <= 10; t++) {
+                                if (learnedMap[l] && learnedMap[l][t]) totalLearned++;
+                            }
+                        }
+                        
+                        const ratio = ((totalLearned / 1000) * 100).toFixed(2);
+                        if (hudCounter) hudCounter.innerHTML = `${totalLearned} <span style="color:rgba(255,255,255,0.4); font-size:1.1rem; font-weight:normal; font-family:-apple-system;">/ 1000</span> <span style="color:#00ffaa; font-size:1.4rem; margin-left:12px;">${ratio}%</span>`;
+                        if (hudBar) hudBar.style.width = `${ratio}%`;
+
+                        for (let l = 1; l <= 100; l++) {
+                            html += `
+                                <div style="display:flex; align-items:center; padding:9px 6px; border-bottom:1px solid rgba(255,255,255,0.02); font-variant-numeric: tabular-nums;">
+                                    <span style="font-size:0.75rem; font-weight:700; color:rgba(255,255,255,0.3); width:65px; letter-spacing:0.5px;">LV.${String(l).padStart(3, '0')}</span>
+                                    <div style="display:grid; grid-template-columns: repeat(10, 1fr); gap:5px; flex:1;">
+                            `;
                             for (let t = 1; t <= 10; t++) {
                                 const isLearned = learnedMap[l] && learnedMap[l][t];
-                                const bgStyle = isLearned ? 'background:var(--flow-emerald); box-shadow:0 0 6px var(--flow-emerald);' : 'background:transparent;';
-                                html += `<div onclick="leftWheel.setValue(${l}); rightWheel.setValue(${t}); document.getElementById(\'stats-manager-panel\').style.display=\'none\';" style="width:16px; height:16px; border:1.5px solid #58a6ff; border-radius:3px; cursor:pointer; ${bgStyle}" title="L${l}-T${t}"></div>`;
+                                const boxStyle = isLearned 
+                                    ? 'background:#00ffaa; border-color:#00ffaa; box-shadow:0 0 8px rgba(0,255,170,0.6);' 
+                                    : 'background:rgba(255,255,255,0.02); border-color:rgba(255,255,255,0.08);';
+                                html += `<div onclick="leftWheel.setValue(${l}); rightWheel.setValue(${t}); document.getElementById('stats-manager-panel').style.display='none';" style="aspect-ratio:1/1; border:1px solid; border-radius:3px; cursor:pointer; transition:all 0.15s; ${boxStyle}" title="L${l}-T${t}"></div>`;
                             }
-                            html += `\n                                    </div>\n                                </div>\n                            `;
+                            html += `
+                                    </div>
+                                </div>
+                            `;
                         }
                         container.innerHTML = html;
                     };
@@ -1472,6 +1509,19 @@
                 currentTask = 10;
                 currentLevel = Math.max(1, currentLevel - 1);
             }
+            leftWheel.setValue(currentLevel);
+            rightWheel.setValue(currentTask);
+        }
+
+        // 专供顶部按钮调用的跨大关函数（无论当前Task是多少，点击后均重置到新大关的第1卡）
+        function navigateLevel(step) {
+            let targetLevel = currentLevel + step;
+            if (targetLevel > 100) targetLevel = 1;
+            if (targetLevel < 1) targetLevel = 100;
+            
+            currentLevel = targetLevel;
+            currentTask = 1; // 强行重置回当前大主题的第一关
+            
             leftWheel.setValue(currentLevel);
             rightWheel.setValue(currentTask);
         }

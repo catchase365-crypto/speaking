@@ -899,8 +899,11 @@
                             // 词首必须是绝对的元音字母开头
                             const isNextVowel = nText.startsWith('a') || nText.startsWith('e') || nText.startsWith('i') || nText.startsWith('o') || nText.startsWith('u');
 
-                            // 物理条件严丝合缝，且原始数据在这一对词中确实触发了连读意图时，才允许渲染弧线
-                            if (isCurrConsonant && isNextVowel && (w.link === true || nextW.link === true)) {
+                            // 核心判定微调：如果当前单词尾部包含任何标点符号（如逗号、句号），强制拦截连读符号的生成
+                            const hasTrailingPunct = /[^a-zA-Z0-9']$/.test(cleanText);
+
+                            // 物理条件严丝合缝，无标点阻断，且原始数据在这一对词中确实触发了连读意图时，才允许渲染弧线
+                            if (isCurrConsonant && isNextVowel && !hasTrailingPunct && (w.link === true || nextW.link === true)) {
                                 hasLink = true;
                             }
                         }

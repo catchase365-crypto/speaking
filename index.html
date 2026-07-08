@@ -294,7 +294,7 @@
             pointer-events: none;
             z-index: 2;
             line-height: 1;
-            transform: translateY(2px); /* 顺手将中央的大数字整体微微下移 2 像素，与上方缩短后的指针拉开完美的黄金比例间距，看着更顺眼 */
+            transform: translateY(-2px);
         }
         .left-frame .center-hud-readout { text-shadow: 0 0 12px rgba(0, 240, 255, 0.25); }
         .right-frame .center-hud-readout { text-shadow: 0 0 12px rgba(189, 0, 255, 0.25); }
@@ -844,8 +844,8 @@ window.addEventListener("click", function(){ var d=document.documentElement; (d.
                         const totalArc = (this.maxVal - this.minVal) * this.degreesPerSlot;
                         if(a > totalArc && a < 360) continue;
                     }
-                    const rStart = isMajor ? 86 : 91;
-                    const rEnd = 97;
+                    const rStart = isMajor ? 88 : 92;
+                    const rEnd = 96;
                     const rad = (a * Math.PI) / 180;
                     
                     const line = document.createElementNS("http://www.w3.org/2000/svg", "line");
@@ -854,7 +854,8 @@ window.addEventListener("click", function(){ var d=document.documentElement; (d.
                     line.setAttribute("x2", 100 + rEnd * Math.sin(rad));
                     line.setAttribute("y2", 100 - rEnd * Math.cos(rad));
                     line.setAttribute("stroke", isMajor ? this.themeColor : this.subColor);
-                    line.setAttribute("stroke-width", isMajor ? "1.5" : "1");
+                    line.setAttribute("stroke-width", isMajor ? "3" : "1.8");
+                    line.setAttribute("stroke-linecap", "round");
                     this.tickGroup.appendChild(line);
                 }
 
@@ -920,6 +921,9 @@ window.addEventListener("click", function(){ var d=document.documentElement; (d.
                     if (stepsFromTop === 0 && node.style.opacity !== "0") {
                         if (!node.classList.contains('active')) {
                             node.classList.add('active');
+                            node.style.fontWeight = '900';
+                            node.style.filter = 'drop-shadow(0 0 8px ' + this.themeColor + ')';
+                            node.style.fontSize = '28px';
                             this.readout.textContent = slotValue;
                             if (slotValue !== this.lastReportedValue) {
                                 this.lastReportedValue = slotValue;
@@ -931,6 +935,9 @@ window.addEventListener("click", function(){ var d=document.documentElement; (d.
                         }
                     } else {
                         node.classList.remove('active');
+                        node.style.fontWeight = 'normal';
+                        node.style.filter = 'none';
+                        node.style.fontSize = '20px';
                     }
                 }
             }

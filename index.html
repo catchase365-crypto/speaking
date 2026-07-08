@@ -225,6 +225,11 @@
             transition: fill 0.1s, font-size 0.1s, opacity 0.1s;
         }
 
+        .center-hud-mesh-bg {
+            fill: url(#fishnetPattern);
+            pointer-events: none;
+        }
+
         .left-frame .dial-text-node.active {
             fill: #ffffff;
             font-size: 24px;
@@ -249,6 +254,43 @@
         }
         .left-frame .center-hud-readout { text-shadow: 0 0 12px rgba(0, 240, 255, 0.25); }
         .right-frame .center-hud-readout { text-shadow: 0 0 12px rgba(189, 0, 255, 0.25); }
+
+        /* 赛博视网膜与性感丝袜眼廓 */
+        .cyber-eye-mesh {
+            fill: url(#fishnetPattern);
+            transition: d 0.3s cubic-bezier(0.25, 0.1, 0.25, 1);
+            pointer-events: none;
+        }
+        .cyber-eye-shadow {
+            fill: url(#sphereGrad);
+            transition: d 0.3s cubic-bezier(0.25, 0.1, 0.25, 1);
+            pointer-events: none;
+        }
+        .cyber-eye-outline {
+            fill: none;
+            stroke-width: 2;
+            stroke-dasharray: 6 3;
+            opacity: 0.7;
+            transition: d 0.3s cubic-bezier(0.25, 0.1, 0.25, 1);
+            pointer-events: none;
+        }
+        .left-frame .cyber-eye-outline {
+            stroke: var(--left-cyan);
+            filter: drop-shadow(0 0 8px var(--left-cyan));
+        }
+        .right-frame .cyber-eye-outline {
+            stroke: var(--right-magenta);
+            filter: drop-shadow(0 0 8px var(--right-magenta));
+        }
+        /* 柔和媚眼闭合动画关键帧 */
+        .is-blinking .cyber-eye-mesh,
+        .is-blinking .cyber-eye-shadow,
+        .is-blinking .cyber-eye-outline {
+            d: path("M 12,100 Q 100,98 188,100 Q 100,102 12,100 Z") !important;
+        }
+        .is-blinking .cyber-eye-pupil {
+            transform: scaleY(0);
+        }
 
         /* 5. 动态大关卡主题看板 */
         .theme-display-panel {
@@ -507,8 +549,24 @@
                 <div class="center-hud-readout" id="leftReadout">1</div>
                 <div class="wheel-touch-zone" id="leftTouchZone">
                     <svg class="wheel-svg-viewport" viewBox="0 0 200 200">
+                        <defs>
+                            <pattern id="fishnetPattern" width="12" height="12" patternUnits="userSpaceOnUse" patternTransform="rotate(45)">
+                                <path d="M 0,0 L 0,12 M 0,0 L 12,0" stroke="rgba(255,255,255,0.2)" stroke-width="0.75" />
+                                <circle cx="6" cy="6" r="1.5" fill="rgba(255,255,255,0.15)" />
+                            </pattern>
+                            <radialGradient id="sphereGrad" cx="50%" cy="50%" r="50%">
+                                <stop offset="60%" stop-color="transparent" />
+                                <stop offset="100%" stop-color="rgba(13,17,23,0.95)" />
+                            </radialGradient>
+                        </defs>
+                        
+                        <path class="cyber-eye-shadow" d="M 12,100 Q 100,15 188,100 Q 100,185 12,100 Z" />
+                        <circle class="cyber-eye-pupil" cx="100" cy="100" r="42" fill="#0d1117" stroke="var(--left-cyan)" stroke-width="1.5" style="pointer-events: none; transition: transform 0.3s; transform-origin: 100px 100px;" />
                         <g id="leftTickGroup" style="transform-origin: 100px 100px; will-change: transform;"></g>
                         <g id="leftTextGroup"></g>
+                        
+                        <path class="cyber-eye-mesh" d="M 12,100 Q 100,15 188,100 Q 100,185 12,100 Z" />
+                        <path class="cyber-eye-outline left-outline" d="M 12,100 Q 100,15 188,100 Q 100,185 12,100 Z" />
                     </svg>
                 </div>
             </div>
@@ -518,16 +576,23 @@
                 <div class="center-hud-readout" id="rightReadout">1</div>
                 <div class="wheel-touch-zone" id="rightTouchZone">
                     <svg class="wheel-svg-viewport" viewBox="0 0 200 200">
+                        <path class="cyber-eye-shadow" d="M 12,100 Q 100,15 188,100 Q 100,185 12,100 Z" />
+                        <circle class="cyber-eye-pupil" cx="100" cy="100" r="42" fill="#0d1117" stroke="var(--right-magenta)" stroke-width="1.5" style="pointer-events: none; transition: transform 0.3s; transform-origin: 100px 100px;" />
                         <g id="rightTickGroup" style="transform-origin: 100px 100px; will-change: transform;"></g>
                         <g id="rightTextGroup"></g>
+                        <path class="cyber-eye-mesh" d="M 12,100 Q 100,15 188,100 Q 100,185 12,100 Z" />
+                        <path class="cyber-eye-outline right-outline" d="M 12,100 Q 100,15 188,100 Q 100,185 12,100 Z" />
                     </svg>
                 </div>
             </div>
             <button class="nav-btn" onclick="navigateLevel(1)">▷</button>
         </div>
 
-        <div class="theme-display-panel" id="themeDisplayPanel">
-            <h2 id="theme-title">未载入数据</h2>
+        <div class="theme-display-panel" id="themeDisplayPanel" style="position: relative; overflow: hidden;">
+            <svg style="position: absolute; top: 0; left: 0; width: 100%; height: 100%; z-index: 0;" xmlns="http://www.w3.org/2000/svg">
+                <rect width="100%" height="100%" class="center-hud-mesh-bg" />
+            </svg>
+            <h2 id="theme-title" style="position: relative; z-index: 1;">未载入数据</h2>
         </div>
 
         <div id="training-board"></div>
@@ -1500,7 +1565,15 @@
 
         let leftWheel, rightWheel;
 
+        function triggerEyeBlink() {
+            document.querySelectorAll('.wheel-svg-viewport').forEach(svg => {
+                svg.classList.add('is-blinking');
+                setTimeout(() => svg.classList.remove('is-blinking'), 300);
+            });
+        }
+
         function navigateCard(step) {
+            triggerEyeBlink();
             currentTask += step;
             if (currentTask > 10) {
                 currentTask = 1;
@@ -1515,6 +1588,7 @@
 
         // 专供顶部按钮调用的跨大关函数（无论当前Task是多少，点击后均重置到新大关的第1卡）
         function navigateLevel(step) {
+            triggerEyeBlink();
             let targetLevel = currentLevel + step;
             if (targetLevel > 100) targetLevel = 1;
             if (targetLevel < 1) targetLevel = 100;

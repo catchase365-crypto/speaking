@@ -341,18 +341,23 @@
         /* 5. 动态大关卡主题看板 */
         .theme-display-panel {
             text-align: center;
-            padding: 8px 12px;
-            background: rgba(22, 27, 34, 0.4);
+            padding: 10px 14px;
+            background: rgba(22, 27, 34, 0.5);
             backdrop-filter: blur(12px);
             -webkit-backdrop-filter: blur(12px);
-            border: 1px solid rgba(255, 255, 255, 0.05);
-            border-radius: 14px;
+            border: 1px solid rgba(255, 255, 255, 0.06);
             margin-bottom: 12px;
-            /* 既然上方正方形最大宽度是 155px * 2，加上 25px 的间距，那么主题条也锁死这个最大宽度，实现绝对垂直对齐 */
             width: 100%;
             max-width: calc(155px * 2 + 25px);
             margin: 0 auto;
             align-self: center;
+            position: relative;
+            background-image: linear-gradient(45deg, rgba(255,255,255,0.04) 25%, transparent 25%), linear-gradient(-45deg, rgba(255,255,255,0.04) 25%, transparent 25%);
+            background-position: 0 0, 0 0;
+            background-size: 12px 12px;
+            border-radius: 4px 4px 16px 16px;
+            clip-path: polygon(0% 0%, 4% 6px, 8% 0%, 12% 6px, 16% 0%, 20% 6px, 24% 0%, 28% 6px, 32% 0%, 36% 6px, 40% 0%, 44% 6px, 48% 0%, 52% 6px, 56% 0%, 60% 6px, 64% 0%, 68% 6px, 72% 0%, 76% 6px, 80% 0%, 84% 6px, 88% 0%, 92% 6px, 96% 0%, 100% 0%, 100% 100%, 0% 100%);
+            border-top: none;
         }
         .theme-display-panel h2 {
             font-size: 0.95rem;
@@ -521,22 +526,46 @@
         .control-panel { display: none !important; }
 
         .nav-btn {
-            background: rgba(255, 255, 255, 0.05);
-            border: 1px solid var(--glass-border);
-            color: #fff;
-            width: 44px;
-            height: 44px;
-            border-radius: 50%;
+            background: rgba(22, 27, 34, 0.6);
+            backdrop-filter: blur(8px);
+            -webkit-backdrop-filter: blur(8px);
+            color: rgba(255, 255, 255, 0.4);
+            width: 24px;
+            height: 80px;
             cursor: pointer;
             display: flex;
             align-items: center;
             justify-content: center;
-            font-size: 1.2rem;
-            transition: all 0.2s;
+            font-size: 0.8rem;
+            transition: all 0.3s cubic-bezier(0.25, 1, 0.5, 1);
             z-index: 5;
+            border: 1px solid rgba(255, 255, 255, 0.08);
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.3);
+            margin: 0 -8px; /* 负边距让耳朵向内靠拢，紧紧贴住眼睛 */
         }
-        .nav-btn:hover { background: rgba(255, 255, 255, 0.15); border-color: var(--flow-cyan); }
-        .nav-btn:active { transform: scale(1.0); }
+        /* 左耳外廓 */
+        .dual-wheel-row > .nav-btn:first-child {
+            border-radius: 50px 4px 4px 50px;
+            padding-right: 2px;
+        }
+        /* 右耳外廓 */
+        .dual-wheel-row > .nav-btn:last-child {
+            border-radius: 4px 50px 50px 4px;
+            padding-left: 2px;
+        }
+        .dual-wheel-row > .nav-btn:first-child:hover {
+            color: var(--left-cyan);
+            background: rgba(0, 240, 255, 0.15);
+            border-color: var(--left-cyan);
+            filter: drop-shadow(0 0 8px var(--left-cyan));
+        }
+        .dual-wheel-row > .nav-btn:last-child:hover {
+            color: var(--right-magenta);
+            background: rgba(0, 255, 170, 0.15);
+            border-color: var(--right-magenta);
+            filter: drop-shadow(0 0 8px var(--right-magenta));
+        }
+        .nav-btn:active { transform: scale(0.95); }
 
         .empty-notice {
             text-align: center;
@@ -573,7 +602,8 @@
                 box-shadow: none;
             }
             h1 { font-size: 1.2rem; margin-bottom: 15px; }
-            .dual-wheel-row { gap: 12px; margin-bottom: 15px; }
+            .dual-wheel-row { gap: 4px; margin-bottom: 15px; }
+            .nav-btn { height: 64px; width: 20px; font-size: 0.7rem; margin: 0 -4px; }
             .wheel-card-frame { max-width: 125px; border-radius: 18px; }
             .center-hud-readout { font-size: 28px; }
             .theme-display-panel {
@@ -673,6 +703,8 @@ window.addEventListener("click", function(){ var d=document.documentElement; (d.
             </div>
             <button class="nav-btn" onclick="navigateLevel(1)">▷</button>
         </div>
+
+        <div class="cyber-nose-zone"></div>
 
         <div class="theme-display-panel" id="themeDisplayPanel" style="position: relative; overflow: hidden; cursor: pointer;" onclick="toggleThemePanel()">
             <div style="position: absolute; top: 0; left: 0; width: 100%; height: 100%; z-index: 0; background: linear-gradient(90deg, rgba(255, 255, 255, 0.03), rgba(255, 255, 255, 0.01));"></div>

@@ -1036,6 +1036,10 @@
 
             // 动态绘制卡片内容
             if (targetCard) {
+                if (currentLevel === 94 && currentTask === 10 && targetCard.words) {
+                    if (targetCard.words[6] && targetCard.words[6].text === 'habits') targetCard.words[6].text = 'habits,';
+                    if (targetCard.words[18] && targetCard.words[18].text === 'obsolescence') targetCard.words[18].text = 'obsolescence,';
+                }
                 renderBoard([targetCard]);
             } else {
                 board.innerHTML = `<div class="empty-notice">⚠️ 关卡索引未命中。请点击上方按钮载入您的全量 1000 关 JSON 大礼包文件。</div>`;

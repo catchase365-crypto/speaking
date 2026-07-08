@@ -530,6 +530,8 @@
                 if (e.target.result) {
                     globalIndexData = e.target.result;
                     console.log(`⚡ 已从本地缓存潜行恢复 ${globalIndexData.length} 个核心关卡`);
+                    leftWheel.setValue(currentLevel);
+                    rightWheel.setValue(currentTask);
                     updateSelectedCard();
                 } else {
                     fetchLocalPack();
@@ -548,6 +550,8 @@
                 
                 globalIndexData = data;
                 savePackToDB(data);
+                leftWheel.setValue(currentLevel);
+                rightWheel.setValue(currentTask);
                 console.log(`✅ 成功自动同步并缓存全量 ${data.length} 个训练卡片`);
                 updateSelectedCard();
             } catch (err) {
@@ -736,15 +740,7 @@
             setValue(val) {
                 if (this.animationFrameId) cancelAnimationFrame(this.animationFrameId);
                 const targetAngle = (this.baseVal - val) * this.degreesPerSlot;
-                // 简易平滑过渡
-                const startAn = this.currentAngle;
-                let diff = targetAngle - startAn;
-                // 处理无限旋转的最短路径
-                if(this.isInfinite) {
-                   if (diff > 180) diff -= 360;
-                   if (diff < -180) diff += 360;
-                }
-                this.currentAngle = startAn + diff;
+                this.currentAngle = targetAngle;
                 this.render();
                 this.onValueChange(val);
             }

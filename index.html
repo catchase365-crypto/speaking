@@ -339,7 +339,10 @@
             border-radius: 14px;
             margin-bottom: 12px;
             backdrop-filter: blur(5px);
+            /* 既然上方正方形最大宽度是 155px * 2，加上 25px 的间距，那么主题条也锁死这个最大宽度，实现绝对垂直对齐 */
             width: 100%;
+            max-width: calc(155px * 2 + 25px);
+            margin: 0 auto;
             align-self: center;
         }
         .theme-display-panel h2 {
@@ -555,7 +558,13 @@
             .dual-wheel-row { gap: 12px; margin-bottom: 15px; }
             .wheel-card-frame { max-width: 125px; border-radius: 18px; }
             .center-hud-readout { font-size: 28px; }
-            .theme-display-panel { margin-bottom: 12px; padding: 6px 8px; width: 100%; }
+            .theme-display-panel {
+                margin-bottom: 12px;
+                padding: 6px 8px;
+                width: 100%;
+                /* 移动端下，上方正方形最大宽度是 125px * 2，加上 12px 间距 */
+                max-width: calc(125px * 2 + 12px);
+            }
             .theme-display-panel h2 { font-size: 0.85rem; line-height: 1.2; }
             .word-text { font-size: 1.15rem; padding: 1px 3px; }
             .interactive-flow-zone { row-gap: 26px; column-gap: 4px; }

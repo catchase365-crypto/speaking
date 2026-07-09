@@ -1455,7 +1455,8 @@ window.addEventListener("click", function(){ var d=document.documentElement; (d.
                     };
 
                     extraButtons.forEach(eb => {
-                        const ebBtn = document.createElement('button');
+                        // 说明：iPad Safari 严格禁止 <button> 嵌套 <button>，会导致内部点击事件被直接吞噬。将录音按钮的基座改为 div 即可突破系统拦截。
+                        const ebBtn = document.createElement(eb.action === 'record' ? 'div' : 'button');
                         ebBtn.className = 'dock-btn';
                         ebBtn.innerHTML = eb.icon;
                         if (eb.action === 'tasks') {
@@ -1488,10 +1489,35 @@ window.addEventListener("click", function(){ var d=document.documentElement; (d.
                             try {
                                 const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
                                 state.chunks = [];
-                                state.mediaRecorder = new MediaRecorder(stream);
+
+                                // 关键修复：iOS/iPad Safari 不支持录制 audio/webm，
+                                // 必须探测浏览器实际支持的格式，否则录出来的数据和贴的标签对不上，
+                                // <audio> 标签会解码失败且不报错，表现为"点了播放没反应"。
+                                const candidateTypes = [
+                                    'audio/mp4',
+                                    'audio/mp4;codecs=mp4a.40.2',
+                                    'audio/webm;codecs=opus',
+                                    'audio/webm',
+                                    'audio/aac',
+                                    'audio/ogg;codecs=opus'
+                                ];
+                                let chosenType = '';
+                                for (const t of candidateTypes) {
+                                    if (window.MediaRecorder && MediaRecorder.isTypeSupported && MediaRecorder.isTypeSupported(t)) {
+                                        chosenType = t;
+                                        break;
+                                    }
+                                }
+                                state.recordedMimeType = chosenType || '';
+
+                                state.mediaRecorder = chosenType
+                                    ? new MediaRecorder(stream, { mimeType: chosenType })
+                                    : new MediaRecorder(stream);
+
                                 state.mediaRecorder.ondataavailable = (e) => { if (e.data.size > 0) state.chunks.push(e.data); };
                                 state.mediaRecorder.onstop = () => {
-                                    const blob = new Blob(state.chunks, { type: 'audio/webm' });
+                                    const actualType = state.mediaRecorder.mimeType || state.recordedMimeType || 'audio/mp4';
+                                    const blob = new Blob(state.chunks, { type: actualType });
                                     state.audioUrl = URL.createObjectURL(blob);
                                     refreshAudioPlaybackWidget();
                                 };
@@ -1530,28 +1556,51 @@ window.addEventListener("click", function(){ var d=document.documentElement; (d.
                             widget.id = 'record-playback-widget';
                             widget.style.cssText = 'position: absolute; bottom: calc(100% + 10px); left: 50%; transform: translateX(-50%); background: rgba(22, 27, 34, 0.95); border: 1px solid var(--flow-cyan); padding: 6px 12px; border-radius: 20px; display: flex; align-items: center; gap: 8px; box-shadow: 0 4px 15px rgba(0,0,0,0.5); z-index: 1000;';
                             
-                            const playBtn = document.createElement('button');
+                            const playBtn = document.createElement('div');
                             playBtn.innerHTML = '▶️';
-                            playBtn.style.cssText = 'background:none; border:none; cursor:pointer; font-size:1rem; color:#fff;';
-                            const audioNode = new Audio(state.audioUrl);
-                            playBtn.onclick = (e) => {
-                                e.stopPropagation(); // 阻止事件冒泡到录音按钮
+                            playBtn.style.cssText = 'background:none; border:none; cursor:pointer; font-size:1rem; color:#fff; display:flex; align-items:center; justify-content:center; pointer-events:none;';
+                            
+                            // 彻底修复 iPad DOM 隔离死穴：创建全局唯一的物理音频节点并挂载至 body 根部
+                            let audioNode = document.getElementById('chronos-fallback-audio');
+                            if (!audioNode) {
+                                audioNode = document.createElement('audio');
+                                audioNode.id = 'chronos-fallback-audio';
+                                audioNode.setAttribute('playsinline', '');
+                                audioNode.style.display = 'none';
+                                document.body.appendChild(audioNode);
+                            }
+                            audioNode.src = state.audioUrl;
+
+                            // 说明：将控制逻辑统一绑定到外层大组件，并给子元素设置 pointer-events: none，确保在 iPad Safari 下完全保留原生的信任手势凭证令牌进行多媒体控制
+                            const togglePlayback = (e) => {
+                                e.stopPropagation(); 
+                                if (e.type === 'touchend') e.preventDefault();
                                 if (audioNode.paused) {
-                                    audioNode.play();
-                                    playBtn.innerHTML = '⏸️';
+                                    const playPromise = audioNode.play();
+                                    if (playPromise !== undefined) {
+                                        playPromise.then(() => {
+                                            playBtn.innerHTML = '⏸️';
+                                        }).catch(err => {
+                                            audioNode.src = state.audioUrl;
+                                            audioNode.play().then(() => {
+                                                playBtn.innerHTML = '⏸️';
+                                            }).catch(err2 => {
+                                                alert("iPad 播放失败，请尝试重新录音，录音时请保持说话并在停止后等待半秒再点击。\n错误信息: " + err2.message);
+                                            });
+                                        });
+                                    }
                                 } else {
                                     audioNode.pause();
                                     playBtn.innerHTML = '▶️';
                                 }
                             };
-                            audioNode.onended = () => { playBtn.innerHTML = '▶️'; };
+
+                            widget.onclick = widget.ontouchend = togglePlayback;
+                            audioNode.onended = () => { if(document.getElementById('record-playback-widget')) playBtn.innerHTML = '▶️'; };
 
                             const label = document.createElement('span');
                             label.innerText = '我的录音';
-                            label.style.cssText = 'font-size: 0.75rem; color: #8b949e; white-space: nowrap;';
-
-                            // 整个播放浮层点击时也阻止冒泡，彻底绝缘
-                            widget.onclick = (e) => { e.stopPropagation(); };
+                            label.style.cssText = 'font-size: 0.75rem; color: #8b949e; white-space: nowrap; pointer-events: none;';
 
                             widget.appendChild(playBtn);
                             widget.appendChild(label);

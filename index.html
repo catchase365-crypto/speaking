@@ -833,7 +833,8 @@ window.addEventListener("click", function(){ var d=document.documentElement; (d.
         // 触觉反馈安全封装
         function triggerHaptic() {
             if (window.navigator && window.navigator.vibrate) {
-                window.navigator.vibrate(12);
+                // 使用数组格式触发多次震动或长脉冲，达到震感增强效果（通常 iOS 对单个长脉冲有限制，短促强力震动效果最佳）
+                window.navigator.vibrate([20, 10, 20]);
             }
         }
 
